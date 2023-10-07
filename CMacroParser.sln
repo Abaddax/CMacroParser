@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33829.357
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMacroParser", "CMacroParser\CMacroParser.csproj", "{3156D288-DC99-4749-8B36-66FCAD38BA7A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CMacroParser.UnitTest", "CMacroParser.UnitTest\CMacroParser.UnitTest.csproj", "{CF64C9FA-8FEC-42B2-B703-A9B5A8C760D2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3156D288-DC99-4749-8B36-66FCAD38BA7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3156D288-DC99-4749-8B36-66FCAD38BA7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3156D288-DC99-4749-8B36-66FCAD38BA7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3156D288-DC99-4749-8B36-66FCAD38BA7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF64C9FA-8FEC-42B2-B703-A9B5A8C760D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF64C9FA-8FEC-42B2-B703-A9B5A8C760D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF64C9FA-8FEC-42B2-B703-A9B5A8C760D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF64C9FA-8FEC-42B2-B703-A9B5A8C760D2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C4E91886-F058-40B9-9163-C44C0EF2F673}
+	EndGlobalSection
+EndGlobal
