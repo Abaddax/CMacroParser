@@ -36,58 +36,33 @@ namespace CMacroParser.Parser
         {
             if (tokens.Length < 4)
                 return false;
-            return tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"));
+            return tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator());
         }
         public static bool IsConstant(this ReadOnlySpan<IToken> tokens)
         {
             if (tokens.Length == 0)
                 return false;
-            if(tokens.IsGroup()) //(1)
-            {
-                var innerTokens = ReadGroup(tokens, out _);
-                return innerTokens.IsConstant();
-            }
             return tokens[0].IsLiternal();
         }
         public static bool IsOperator(this ReadOnlySpan<IToken> tokens)
         {
             if (tokens.Length < 2)
                 return false;
-            //Unary
             if (tokens[0].IsOperator())
-            {
-                if (tokens[1].IsIdentifier() || tokens[1].IsLiternal())
-                    return true; //++a
-                if (tokens[1..].IsGroup())
-                    return true; //!(a>b)
-            }
-            //Binary or ternary
-            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiternal(), x => x.IsOperator()))
-                return true;  //a++,a+b,a?b:c
-            //Binary or ternary
-            if (tokens.IsGroup())
-            {
-                ReadGroup(tokens, out var skip);
-                if (tokens.Length <= skip)
-                    return false;
-                if (tokens[skip].IsOperator())
-                    return true; //(a)+b,(a)?b:c
-            }
+                return true;
+            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiternal(), x => x.IsOperator("++") || x.IsOperator("--")))
+                return true;  //a++
             return false;
         }
         public static bool IsVariable(this ReadOnlySpan<IToken> tokens)
         {
             if (tokens.Length == 0)
                 return false;
-            if (tokens.IsGroup()) //(A)
-            {
-                var innerTokens = ReadGroup(tokens, out _);
-                return innerTokens.IsVariable();
-            }
             return !tokens[0].IsCall() && tokens[0].IsKeyword() || tokens[0].IsIdentifier();
         }
 
-        public static IExpression ParseCall(this ReadOnlySpan<IToken> tokens, out int skip)
+
+        public static IExpression ReadCall(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (!tokens.IsCall())
                 throw new InvalidOperationException();
@@ -114,7 +89,7 @@ namespace CMacroParser.Parser
                 Arguments = argExpressions.ToArray()
             };
         }
-        public static IExpression ParseCast(this ReadOnlySpan<IToken> tokens, out int skip)
+        public static IExpression ReadCast(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (!tokens.IsCast())
                 throw new InvalidOperationException();
@@ -122,111 +97,65 @@ namespace CMacroParser.Parser
             var target = tokens[1];
             skip = 3;
 
-            var value = tokens[3..].ReadGroupOrToken(out int _skip);
+            var valueExpr = Parser.ParseSingleExpression(tokens[3..], out int _skip);
             skip += _skip;
 
-            var valueExpr = Parser.ParseExpression(value);
             return new CastExpression()
             {
                 Value = valueExpr,
                 TargetType = target,
             };
         }
-        public static IExpression ParseConstant(this ReadOnlySpan<IToken> tokens, out int skip)
+        public static IExpression ReadConstant(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (!tokens.IsConstant())
                 throw new InvalidOperationException();
-            skip = 0;
-            while (tokens.IsGroup())
-            {
-                tokens = tokens.ReadGroup(out var _skip);
-                skip += _skip;
-            }
-            skip += 1;
+            skip = 1;
             return new ConstantExpression()
             {
                 Value = (LiteralToken)tokens[0]
             };
         }
-        public static IExpression ParseOperator(this ReadOnlySpan<IToken> tokens, out int skip)
+        public static IExpression ReadOperator(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (!tokens.IsOperator())
                 throw new InvalidOperationException();
 
-            ReadOnlySpan<IToken> expr1, expr2, expr3;
-            IToken @operator1, @operator2;
-
             //++a
             if (tokens[0].IsOperator())
             {
-                @operator1 = tokens[0];
-                expr1 = tokens[1..].ReadGroupOrToken(out skip);
-                skip += 1;
+                var @operator = (OperatorToken)tokens[0];
+                skip = 1;
 
-                //++a
+                var expression = Parser.ParseSingleExpression(tokens[1..], out int _skip);
+                skip += _skip;
                 return new UnaryOperatorExpression()
                 {
-                    Operator = (OperatorToken)@operator1,
-                    Expression = Parser.ParseExpression(expr1),
-                    IsSuffixOperator = false
+                    Operator = @operator,
+                    Expression = expression,
+                    IsSuffixOperator = false,
                 };
             }
-
-            //a++, a+b, a+b+c, a?b:c 
-            expr1 = tokens[0..].ReadGroupOrToken(out skip);
-            operator1 = tokens[skip++];
-
             //a++
-            if (!tokens[skip..].IsSequenceOf(x => x.IsIdentifier() || x.IsLiternal() || x.IsPunctuator("(")))
+            else
             {
+                var exprTokens = ReadGroupOrToken(tokens, out skip);
+                var expression = Parser.ParseSingleExpression(exprTokens, out _);
+                var @operator = (OperatorToken)tokens[skip++];
                 return new UnaryOperatorExpression()
                 {
-                    Operator = (OperatorToken)@operator1,
-                    Expression = Parser.ParseExpression(expr1),
+                    Operator = @operator,
+                    Expression = expression,
                     IsSuffixOperator = true
                 };
             }
-
-            expr2 = tokens[skip..].ReadGroupOrToken(out var _skip);
-            skip += _skip;
-
-            //a+b
-            if (operator1.Value != "?")
-            {
-                return new BinaryOperatorExpression()
-                {
-                    LeftExpression = Parser.ParseExpression(expr1),
-                    Operator = (OperatorToken)operator1,
-                    RightExpression = Parser.ParseExpression(expr2)
-                };
-            }
-
-            //a?b:c
-            operator2 = tokens[skip++];
-            expr3 = tokens[skip..].ReadGroupOrToken(out _skip);
-            skip += _skip;
-
-            return new TernaryOperatorExpression()
-            {
-                Condition = Parser.ParseExpression(expr1),
-                Operator1 = (OperatorToken)operator1,
-                TrueExpression = Parser.ParseExpression(expr2),
-                Operator2 = (OperatorToken)operator2,
-                FalseExpression = Parser.ParseExpression(expr3)
-            };
         }
-        public static IExpression ParseVariable(this ReadOnlySpan<IToken> tokens, out int skip)
+        public static IExpression ReadVariable(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (!IsVariable(tokens))
                 throw new InvalidOperationException();
 
-            skip = 0;
-            while (tokens.IsGroup())
-            {
-                tokens = tokens.ReadGroup(out var _skip);
-                skip += _skip;
-            }
-            skip += 1;
+            skip = 1;
             return new VariableExpression()
             {
                 Value = new IdentifierToken()
@@ -237,48 +166,63 @@ namespace CMacroParser.Parser
         }
 
 
-        public static IExpression Concat(this IExpression last, IExpression expression)
+        public static IExpression Concat(this IExpression last, IExpression append)
         {
             if (last == null)
-                return expression;
-            if (expression is UnaryOperatorExpression append && !append.IsSuffixOperator)
+                return append;
+            else if (append is UnaryOperatorExpression appendUnary && !appendUnary.IsSuffixOperator) //last +append
             {
-                if (last is BinaryOperatorExpression lastExpr)
+                //Check operator order 
+                //(1+2)*3 -> 1+(2*3)
+                if (last is BinaryOperatorExpression lastBinary) //last=1+2 -> +append
                 {
-                    Parser.OperationPrecedence.TryGetValue(lastExpr.Operator.Value, out var precedence1);
-                    Parser.OperationPrecedence.TryGetValue(append.Operator.Value, out var precedence2);
+                    if(lastBinary.Operator.Value=="?"&& appendUnary.Operator.Value==":")
+                    {
+                        return new TernaryOperatorExpression()
+                        {
+                            Condition = lastBinary.LeftExpression,
+                            Operator1 = lastBinary.Operator,
+                            TrueExpression = lastBinary.RightExpression,
+                            Operator2 = appendUnary.Operator,
+                            FalseExpression = appendUnary.Expression
+                        };
+                    }
+
+                    Parser.OperationPrecedence.TryGetValue(lastBinary.Operator.Value, out var precedence1);
+                    Parser.OperationPrecedence.TryGetValue(appendUnary.Operator.Value, out var precedence2);
 
                     if (precedence1 > precedence2)
                     {
                         //Swaped
                         var rightExpr = new BinaryOperatorExpression()
                         {
-                            LeftExpression = lastExpr.RightExpression,
-                            Operator = append.Operator,
-                            RightExpression = append.Expression,
+                            LeftExpression = lastBinary.RightExpression,
+                            Operator = appendUnary.Operator,
+                            RightExpression = appendUnary.Expression,
                         };
                         return new BinaryOperatorExpression()
                         {
-                            LeftExpression = lastExpr.LeftExpression,
-                            Operator = lastExpr.Operator,
+                            LeftExpression = lastBinary.LeftExpression,
+                            Operator = lastBinary.Operator,
                             RightExpression = rightExpr,
                         };
                     }
                 }
+
                 //Normal
                 return new BinaryOperatorExpression()
                 {
                     LeftExpression = last,
-                    Operator = append.Operator,
-                    RightExpression = append.Expression,
+                    Operator = appendUnary.Operator,
+                    RightExpression = appendUnary.Expression,
                 };
             }
 
-            throw new Exception($"Unable to concat '{expression}' to '{last}'");
+            throw new Exception($"Unable to concat '{append}' to '{last}'");
         }
 
 
-        private static bool IsGroup(this ReadOnlySpan<IToken> tokens)
+        public static bool IsGroup(this ReadOnlySpan<IToken> tokens)
         {
             if (tokens.Length < 3)
                 return false;
@@ -286,7 +230,7 @@ namespace CMacroParser.Parser
                 return true;
             return false;
         }
-        private static ReadOnlySpan<IToken> ReadGroup(this ReadOnlySpan<IToken> tokens, out int skip)
+        public static ReadOnlySpan<IToken> ReadGroup(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             HashSet<char> openSeperator = new HashSet<char>("([{");
             HashSet<char> closeSeperator = new HashSet<char>(")]}");
@@ -311,13 +255,15 @@ namespace CMacroParser.Parser
             }
             return tokens[1..(skip - 1)];
         }
-        private static ReadOnlySpan<IToken> ReadGroupOrToken(this ReadOnlySpan<IToken> tokens, out int skip)
+        public static ReadOnlySpan<IToken> ReadGroupOrToken(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (tokens.IsGroup())
                 return tokens.ReadGroup(out skip);
             skip = 1;
             return tokens[0..1];
         }
+
+
 
         private static List<IToken[]> ReadArgs(this ReadOnlySpan<IToken> tokens)
         {

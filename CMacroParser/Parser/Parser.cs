@@ -77,7 +77,7 @@ namespace CMacroParser.Parser
 
             if (!tokens.IsCall())
             {
-                var name = (VariableExpression)tokens.ParseVariable(out int skip);
+                var name = (VariableExpression)tokens.ReadVariable(out int skip);
                 if (skip >= tokens.Length)
                 {
                     return new VariableDefinition()
@@ -98,7 +98,7 @@ namespace CMacroParser.Parser
             }
             else
             {
-                var func = (CallExpression)tokens.ParseCall(out int skip);
+                var func = (CallExpression)tokens.ReadCall(out int skip);
                 if (skip >= tokens.Length)
                 {
                     return new FunctionDefinition()
@@ -138,20 +138,7 @@ namespace CMacroParser.Parser
             do
             {
                 var tokens = expressionTokens[pos..];
-                int skip;
-                IExpression expression;
-                if (tokens.IsCall())
-                    expression = tokens.ParseCall(out skip);
-                else if (tokens.IsOperator())
-                    expression = tokens.ParseOperator(out skip);
-                else if (tokens.IsCast())
-                    expression = tokens.ParseCast(out skip);
-                else if (tokens.IsConstant())
-                    expression = tokens.ParseConstant(out skip);
-                else if (tokens.IsVariable())
-                    expression = tokens.ParseVariable(out skip);
-                else
-                    throw new NotSupportedException();
+                IExpression expression = ParseSingleExpression(tokens, out int skip);
                 pos += skip;
 
                 //Append to last or set
@@ -159,10 +146,32 @@ namespace CMacroParser.Parser
             }
             while (pos < expressionTokens.Length);
             return last;
-
-            if (pos != expressionTokens.Length)
-                throw new Exception($"Unable to process entire expression. Multiple expressions are not supported. Unprocessed: {expressionTokens[pos..].Serialize()}");
-            //return expression;
+        }
+        internal static IExpression ParseSingleExpression(ReadOnlySpan<IToken> tokens, out int skip)
+        {
+            if (tokens.IsGroup() && !tokens.IsCast())
+            {
+                tokens = tokens.ReadGroup(out skip);
+                var expression = ParseExpression(tokens);
+                if (expression is GroupExpression)
+                    return expression;
+                return new GroupExpression()
+                {
+                    Expression = ParseExpression(tokens)
+                };
+            }
+            else if (tokens.IsCall())
+                return tokens.ReadCall(out skip);
+            else if (tokens.IsOperator())
+                return tokens.ReadOperator(out skip);
+            else if (tokens.IsCast())
+                return tokens.ReadCast(out skip);
+            else if (tokens.IsConstant())
+                return tokens.ReadConstant(out skip);
+            else if (tokens.IsVariable())
+                return tokens.ReadVariable(out skip);
+            else
+                throw new NotSupportedException();
         }
     }
 }   
