@@ -27,10 +27,18 @@ namespace CMacroParser.Models.Expressions
                 yield return new PunctuatorToken() { Value = ")" };
             }
         }
-        
-        public override bool Expand(IEnumerable<IDefinition> definitions)
+
+        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
         {
-            return Value.Expand(definitions);
+            return Value.ContainsUnknown(definitions);
+        }
+        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
+        {
+            return new CastExpression()
+            {
+                TargetType = TargetType,
+                Value = Value.Expand(definitions),
+            };
         }
         public override string Serialize()
         {

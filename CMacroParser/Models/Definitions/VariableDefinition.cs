@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CMacroParser.Models.Definitions
 {
-    internal class VariableDefinition : IDefinition
+    internal class VariableDefinition : IMacroDefinition
     {
         public string Name { get; init; }
         public string[]? Args => null;

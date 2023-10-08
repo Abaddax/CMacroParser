@@ -26,10 +26,19 @@ namespace CMacroParser.Models.Expressions
                     yield return Operator;
             }
         }
-        
-        public override bool Expand(IEnumerable<IDefinition> definitions)
+
+        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
         {
-            return Expression.Expand(definitions);
+            return Expression.ContainsUnknown(definitions);
+        }
+        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
+        {
+            return new UnaryOperatorExpression()
+            {
+                IsSuffixOperator = IsSuffixOperator,
+                Operator = Operator,
+                Expression = Expression.Expand(definitions),
+            };
         }
         public override string Serialize()
         {
@@ -56,10 +65,20 @@ namespace CMacroParser.Models.Expressions
                     yield return token;
             }
         }
-        
-        public override bool Expand(IEnumerable<IDefinition> definitions)
+
+        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
         {
-            return LeftExpression.Expand(definitions) | RightExpression.Expand(definitions);
+            return LeftExpression.ContainsUnknown(definitions) |
+                RightExpression.ContainsUnknown(definitions);
+        }
+        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
+        {
+            return new BinaryOperatorExpression()
+            {
+                LeftExpression = LeftExpression.Expand(definitions),
+                Operator = Operator,
+                RightExpression = RightExpression.Expand(definitions),
+            };
         }
         public override string Serialize()
         {
@@ -88,10 +107,23 @@ namespace CMacroParser.Models.Expressions
                     yield return token;
             }
         }
-        
-        public override bool Expand(IEnumerable<IDefinition> definitions)
+
+        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
         {
-            return Condition.Expand(definitions) | TrueExpression.Expand(definitions) | FalseExpression.Expand(definitions);
+            return Condition.ContainsUnknown(definitions) |
+                TrueExpression.ContainsUnknown(definitions) |
+                FalseExpression.ContainsUnknown(definitions);
+        }
+        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
+        {
+            return new TernaryOperatorExpression()
+            {
+                Condition = Condition.Expand(definitions),
+                Operator1 = Operator1,
+                TrueExpression = TrueExpression.Expand(definitions),
+                Operator2 = Operator2,
+                FalseExpression = FalseExpression.Expand(definitions)
+            };
         }
         public override string Serialize()
         {

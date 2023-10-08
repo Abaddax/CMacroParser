@@ -19,10 +19,14 @@ namespace CMacroParser.Models.Expressions
                 yield return Value;
             }
         }
-        
-        public override bool Expand(IEnumerable<IDefinition> definitions)
+
+        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
         {
-            return false; //Final
+            return false;
+        }
+        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
+        {
+            return this;
         }
         public override string Serialize()
         {

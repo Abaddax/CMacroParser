@@ -67,7 +67,7 @@ namespace CMacroParser.Parser
             { LiteralType.@bool, 1 }
         };
 
-        public static IDefinition ParseDefinition(this string definition)
+        public static IMacroDefinition ParseDefinition(this string definition)
         {
             definition = definition.Trim();
             if (definition.StartsWith("#define "))

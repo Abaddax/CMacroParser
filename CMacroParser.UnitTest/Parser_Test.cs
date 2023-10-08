@@ -13,7 +13,7 @@ namespace CMacroParser.UnitTest
     public class Parser_Test
     {
         [Test]
-        [Category("Expression")]
+        [Category("Basic")]
         #region [TestCases]
         [TestCase("123", "123")]
         [TestCase("(123)", "(123)")]
@@ -98,6 +98,44 @@ namespace CMacroParser.UnitTest
             var definition = Parser.Parser.ParseDefinition(input);
 
             Assert.NotNull(definition);
+        }
+
+        [Test]
+        [Category("Expansion")]
+        #region [TestCases]
+        [TestCase("123", false)]
+        [TestCase("A", true)]
+        [TestCase("A", false, "A 2")]
+        [TestCase("FUNC(3e2, B)", true, "FUNC(a,b) a+b", "B A")]
+        [TestCase("FUNC(3e2, B)", false, "FUNC(a,b) a+b", "B A", "A 2")]
+        #endregion
+        public void T4_ContainsUnknown(string input, bool containsUnknown, params string[] definitions)
+        {
+            var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
+            var expr = Parser.Parser.ParseExpression(input);
+
+            Assert.AreEqual(containsUnknown, expr.ContainsUnknown(defs));
+        }
+
+        [Test]
+        [Category("Expansion")]
+        #region [TestCases]
+        [TestCase("123", "123")]
+        [TestCase("A", "A")]
+        [TestCase("A", "2", "A 2")]
+        [TestCase("FUNC(3e2, B)", "(300 + A)", "FUNC(a,b) a+b", "B A")]
+        [TestCase("FUNC(3e2, B)", "(300 + 2)", "FUNC(a,b) a+b", "B A", "A 2")]
+        #endregion
+        public void T5_Expand(string input, string output, params string[] definitions)
+        {
+            var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
+            var expr = Parser.Parser.ParseExpression(input);
+
+            var expanded = expr.Expand(defs);
+
+            Assert.NotNull(expanded);
+
+            Assert.AreEqual(output, expanded.Serialize());
         }
 
     }

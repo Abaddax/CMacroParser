@@ -20,9 +20,19 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override bool Expand(IEnumerable<IDefinition> definitions)
+        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
         {
-            throw new NotImplementedException();
+            var def = definitions.FirstOrDefault(x => x.Name == Value.Value && x.Args == null && x.Expression != null);
+            if (def == null)
+                return true;
+            return def.Expression!.ContainsUnknown(definitions);
+        }
+        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
+        {
+            var def = definitions.FirstOrDefault(x => x.Name == Value.Value && x.Args == null && x.Expression != null);
+            if (def == null)
+                return this;
+            return def.Expression!.Expand(definitions);
         }
         public override string Serialize()
         {

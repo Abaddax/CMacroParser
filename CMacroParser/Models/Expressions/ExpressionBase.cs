@@ -11,9 +11,10 @@ namespace CMacroParser.Models.Expressions
     internal abstract class ExpressionBase : IExpression
     {
         public abstract IEnumerable<IToken> Tokens { get; }
-        public abstract bool Expand(IEnumerable<IDefinition> definitions);
-        public abstract string Serialize();
+        public abstract bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions);
+        public abstract IExpression Expand(IEnumerable<IMacroDefinition> definitions);
 
+        public abstract string Serialize();
         public override string ToString()
         {
             return Serialize();
