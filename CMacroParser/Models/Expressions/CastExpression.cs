@@ -1,11 +1,5 @@
 ﻿using CMacroParser.Contracts;
 using CMacroParser.Models.Tokens;
-using CMacroParser.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CMacroParser.Models.Expressions
 {
@@ -28,18 +22,6 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
-        {
-            return Value.ContainsUnknown(definitions);
-        }
-        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
-        {
-            return new CastExpression()
-            {
-                TargetType = TargetType,
-                Value = Value.Expand(definitions),
-            };
-        }
         public override string Serialize()
         {
             return $"({this.DeduceType()}){Value.Serialize()}";

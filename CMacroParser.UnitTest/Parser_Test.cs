@@ -1,11 +1,4 @@
 ﻿using CMacroParser.Contracts;
-using CMacroParser.Models.Tokens;
-using CMacroParser.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CMacroParser.UnitTest
 {
@@ -20,7 +13,7 @@ namespace CMacroParser.UnitTest
         [TestCase("((123))", "(123)")]
         [TestCase("-123", "-123")]
         [TestCase("(-123)", "(-123)")]
-        [TestCase("A", "A")]        
+        [TestCase("A", "A")]
         [TestCase("(A)", "(A)")]
         [TestCase("((A))", "(A)")]
         [TestCase("-A", "-A")]
@@ -34,8 +27,8 @@ namespace CMacroParser.UnitTest
         [TestCase("++a", "++a")]
         [TestCase("a++", "a++")]
         [TestCase("1 + 3.2", "(1 + 3.2)")]
-        [TestCase("(1) + (3.2)", "((1) + (3.2))")]        
-        [TestCase("(1 + 2) > 1", "((1 + 2) > 1)")]       
+        [TestCase("(1) + (3.2)", "((1) + (3.2))")]
+        [TestCase("(1 + 2) > 1", "((1 + 2) > 1)")]
         [TestCase("1 + 2 * 3", "(1 + (2 * 3))")]
         [TestCase("(1 + 2) * 3", "((1 + 2) * 3)")]
         [TestCase("1 * (2 + 3)", "(1 * (2 + 3))")]
@@ -64,6 +57,20 @@ namespace CMacroParser.UnitTest
         [Test]
         [Category("Basic")]
         #region [TestCases]
+        [TestCase("A 2", LiteralType.@int)]
+        [TestCase("#define B 3", LiteralType.@double)]
+        [TestCase("FUNC(A) A * 2", LiteralType.@double)]
+        #endregion
+        public void T2_ParseDefinition(string input, LiteralType type)
+        {
+            var definition = Parser.Parser.ParseDefinition(input);
+
+            Assert.NotNull(definition);
+        }
+
+        [Test]
+        [Category("Basic")]
+        #region [TestCases]
         [TestCase("123", LiteralType.@int)]
         [TestCase("1.23", LiteralType.@double)]
         [TestCase("123 + 1.23", LiteralType.@double)]
@@ -76,7 +83,7 @@ namespace CMacroParser.UnitTest
         [TestCase("\"test\"", LiteralType.@string)]
         [TestCase("(int)((double)2 + 3)", LiteralType.@int)]
         #endregion
-        public void T2_DeduceType(string input, LiteralType type)
+        public void T3_DeduceType(string input, LiteralType type)
         {
             var expression = Parser.Parser.ParseExpression(input);
 
@@ -89,15 +96,18 @@ namespace CMacroParser.UnitTest
         [Test]
         [Category("Basic")]
         #region [TestCases]
-        [TestCase("A 2", LiteralType.@int)]
-        [TestCase("#define B 3", LiteralType.@double)]
-        [TestCase("FUNC(A) A * 2", LiteralType.@double)]
+        [TestCase("123", true)]
+        [TestCase("A", false)]
+        [TestCase("A", true, "A 2")]
+        [TestCase("FUNC(3e2, B)", false, "FUNC(a,b) a+b", "B A")]
+        [TestCase("FUNC(3e2, B)", true, "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void T3_ParseDefinition(string input, LiteralType type)
+        public void T4_IsConst(string input, bool isConst, params string[] definitions)
         {
-            var definition = Parser.Parser.ParseDefinition(input);
+            var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
+            var expr = Parser.Parser.ParseExpression(input);
 
-            Assert.NotNull(definition);
+            Assert.AreEqual(isConst, expr.IsConst(defs));
         }
 
         [Test]
@@ -109,7 +119,7 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, B)", true, "FUNC(a,b) a+b", "B A")]
         [TestCase("FUNC(3e2, B)", false, "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void T4_ContainsUnknown(string input, bool containsUnknown, params string[] definitions)
+        public void T5_ContainsUnknown(string input, bool containsUnknown, params string[] definitions)
         {
             var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
             var expr = Parser.Parser.ParseExpression(input);
@@ -126,7 +136,7 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, B)", "(300 + A)", "FUNC(a,b) a+b", "B A")]
         [TestCase("FUNC(3e2, B)", "(300 + 2)", "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void T5_Expand(string input, string output, params string[] definitions)
+        public void T6_Expand(string input, string output, params string[] definitions)
         {
             var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
             var expr = Parser.Parser.ParseExpression(input);
@@ -137,6 +147,5 @@ namespace CMacroParser.UnitTest
 
             Assert.AreEqual(output, expanded.Serialize());
         }
-
     }
 }

@@ -1,14 +1,7 @@
 ﻿using CMacroParser.Contracts;
 using CMacroParser.Models.Expressions;
 using CMacroParser.Models.Tokens;
-using CMacroParser.Tokenizer;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using static CMacroParser.Parser.Parser;
 
 namespace CMacroParser.Parser
 {
@@ -176,7 +169,7 @@ namespace CMacroParser.Parser
                 //(1+2)*3 -> 1+(2*3)
                 if (last is BinaryOperatorExpression lastBinary) //last=1+2 -> +append
                 {
-                    if(lastBinary.Operator.Value=="?"&& appendUnary.Operator.Value==":")
+                    if (lastBinary.Operator.Value == "?" && appendUnary.Operator.Value == ":")
                     {
                         return new TernaryOperatorExpression()
                         {
@@ -188,8 +181,8 @@ namespace CMacroParser.Parser
                         };
                     }
 
-                    Parser.OperationPrecedence.TryGetValue(lastBinary.Operator.Value, out var precedence1);
-                    Parser.OperationPrecedence.TryGetValue(appendUnary.Operator.Value, out var precedence2);
+                    OperationPrecedence.TryGetValue(lastBinary.Operator.Value, out var precedence1);
+                    OperationPrecedence.TryGetValue(appendUnary.Operator.Value, out var precedence2);
 
                     if (precedence1 > precedence2)
                     {
@@ -283,7 +276,7 @@ namespace CMacroParser.Parser
             ret.Add(tokens[lastIndex..].ToArray());
 
             return ret;
-        }   
-        
+        }
+
     }
 }

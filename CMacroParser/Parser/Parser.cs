@@ -2,18 +2,13 @@
 using CMacroParser.Models.Definitions;
 using CMacroParser.Models.Expressions;
 using CMacroParser.Tokenizer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CMacroParser.Parser
 {
     public static class Parser
     {
         //https://en.cppreference.com/w/cpp/language/operator_precedence
-        internal static readonly Dictionary<string, int> OperationPrecedence = new Dictionary<string, int>
+        internal static readonly IReadOnlyDictionary<string, int> OperationPrecedence = new Dictionary<string, int>
         {
             { "*", 5 },
             { "/", 5 },
@@ -48,7 +43,7 @@ namespace CMacroParser.Parser
             { ",", 17 },
         };
         //https://stackoverflow.com/questions/5563000/implicit-type-conversion-rules-in-c-operators
-        internal static readonly Dictionary<LiteralType, int> TypePrecedence = new Dictionary<LiteralType, int>
+        internal static readonly IReadOnlyDictionary<LiteralType, int> TypePrecedence = new Dictionary<LiteralType, int>
         {
             { LiteralType.@string, 1 },
             { LiteralType.@char, 2 },
@@ -120,8 +115,8 @@ namespace CMacroParser.Parser
                 }
             }
         }
-        
-        
+
+
         public static IExpression ParseExpression(this string expression)
         {
             var tokens = expression.Tokenize();
@@ -174,4 +169,4 @@ namespace CMacroParser.Parser
                 throw new NotSupportedException();
         }
     }
-}   
+}

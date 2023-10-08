@@ -1,13 +1,7 @@
 ﻿using CMacroParser.Contracts;
 using CMacroParser.Models.Tokens;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics.Arm;
-using System.Text;
-using System.Threading.Tasks;
+using static CMacroParser.Tokenizer.Tokenizer;
 
 namespace CMacroParser.Tokenizer
 {
@@ -17,27 +11,27 @@ namespace CMacroParser.Tokenizer
         {
             if (chars.Length == 0)
                 return false;
-            return Tokenizer.Separators.Contains(chars[0]);
+            return Separators.Contains(chars[0]);
         }
         public static bool IsPunctuator(this ReadOnlySpan<char> chars)
         {
             if (chars.Length == 0)
                 return false;
-            return Tokenizer.Punctuators.Contains(chars[0]);
+            return Punctuators.Contains(chars[0]);
         }
         public static bool IsKeyword(this ReadOnlySpan<char> chars)
         {
             if (chars.Length == 0)
                 return false;
-            foreach (var keyword in Tokenizer.Keywords)
+            foreach (var keyword in Keywords)
             {
                 if (!chars.StartsWith(keyword))
                     continue;
                 if (chars.Length == keyword.Length)
                     return true;
                 //Check if not concatinated with something else e.g. int_max
-                if (Tokenizer.Separators.Contains(chars[keyword.Length]) ||
-                    Tokenizer.Punctuators.Contains(chars[keyword.Length]))
+                if (Separators.Contains(chars[keyword.Length]) ||
+                    Punctuators.Contains(chars[keyword.Length]))
                     return true;
             }
             return false;
@@ -46,7 +40,7 @@ namespace CMacroParser.Tokenizer
         {
             if (chars.Length == 0)
                 return false;
-            return Tokenizer.Operators.Contains(chars[0]);
+            return Operators.Contains(chars[0]);
         }
         public static bool IsLiteral(this ReadOnlySpan<char> chars)
         {
@@ -55,7 +49,7 @@ namespace CMacroParser.Tokenizer
             if (chars.StartsWith("true") ||
                 chars.StartsWith("false")) //Technically an identifier but this is easier
                 return true;
-            return Tokenizer.Digits.Contains(chars[0]) ||
+            return Digits.Contains(chars[0]) ||
                 char.ToLowerInvariant(chars[0]) == '\'' ||
                 char.ToLowerInvariant(chars[0]) == '\"' ||
                 char.ToLowerInvariant(chars[0]) == '.';
@@ -101,7 +95,7 @@ namespace CMacroParser.Tokenizer
             if (!IsKeyword(chars))
                 throw new InvalidOperationException();
             List<string> keywords = new List<string>();
-            foreach (var keyword in Tokenizer.Keywords)
+            foreach (var keyword in Keywords)
             {
                 if (chars.StartsWith(keyword))
                     keywords.Add(keyword); //Multiple possible e.g. do and double
@@ -191,7 +185,7 @@ namespace CMacroParser.Tokenizer
                 };
             }
             //number
-            else if (chars[0] == '.' || Tokenizer.Digits.Contains(chars[0]))
+            else if (chars[0] == '.' || Digits.Contains(chars[0]))
             {
                 skip = 0;
 
@@ -200,7 +194,7 @@ namespace CMacroParser.Tokenizer
                 //Check for integer base
                 if (chars[0] == '0')
                 {
-                    if(chars.Length==1)
+                    if (chars.Length == 1)
                     {
                         skip = 0;
                     }
@@ -226,16 +220,16 @@ namespace CMacroParser.Tokenizer
 
                 while (skip < chars.Length)
                 {
-                    if (numBase <= 10 && Tokenizer.Digits.Contains(chars[skip]))
+                    if (numBase <= 10 && Digits.Contains(chars[skip]))
                         skip++;
-                    else if (numBase == 16 && (Tokenizer.Digits.Contains(chars[skip]) || Tokenizer.HexDigits.Contains(char.ToLowerInvariant(chars[skip]))))
+                    else if (numBase == 16 && (Digits.Contains(chars[skip]) || HexDigits.Contains(char.ToLowerInvariant(chars[skip]))))
                         skip++;
                     else if (chars[skip] == '.')
                     {
                         numBase = 10;
                         skip++;
                     }
-                    else if (numBase==10 && char.ToLowerInvariant(chars[skip]) == 'e')
+                    else if (numBase == 10 && char.ToLowerInvariant(chars[skip]) == 'e')
                     {
                         skip++;
                         if (chars[skip] == '+')
@@ -243,7 +237,7 @@ namespace CMacroParser.Tokenizer
                         if (chars[skip] == '-')
                             skip++;
                     }
-                    else if (Tokenizer.NumberEnd.Contains(char.ToLowerInvariant(chars[skip])))
+                    else if (NumberEnd.Contains(char.ToLowerInvariant(chars[skip])))
                         skip++;
                     else
                         break;

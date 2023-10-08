@@ -1,10 +1,5 @@
 ﻿using CMacroParser.Contracts;
 using CMacroParser.Models.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CMacroParser.Models.Expressions
 {
@@ -23,18 +18,6 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-
-        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
-        {
-            return Expression.ContainsUnknown(definitions);
-        }
-        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
-        {
-            return new GroupExpression()
-            {
-                Expression = Expression.Expand(definitions)
-            };
-        }
         public override string Serialize()
         {
             var ser = Expression.Serialize();

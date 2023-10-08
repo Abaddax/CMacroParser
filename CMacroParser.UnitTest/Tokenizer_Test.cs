@@ -1,8 +1,6 @@
 using CMacroParser.Contracts;
 using CMacroParser.Models.Tokens;
 using CMacroParser.Tokenizer;
-using System;
-using System.Diagnostics;
 
 namespace CMacroParser.UnitTest
 {

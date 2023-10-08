@@ -1,21 +1,16 @@
 ﻿using CMacroParser.Contracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CMacroParser.Tokenizer
 {
     public static class Tokenizer
     {
-        internal static readonly HashSet<char> Digits = new HashSet<char>("0123456789");
-        internal static readonly HashSet<char> HexDigits = new HashSet<char>("abcdef");
-        internal static readonly HashSet<char> Separators = new HashSet<char>(" \\\r\n\t");
-        internal static readonly HashSet<char> NumberEnd = new HashSet<char>("ulfd");
-        internal static readonly HashSet<char> Operators = new HashSet<char>("+-*/%<>=~!^|&?:");
-        internal static readonly HashSet<char> Punctuators = new HashSet<char>(",;()[]{}");
-        internal static readonly HashSet<string> Keywords = new HashSet<string>
+        internal static readonly IReadOnlySet<char> Digits = new HashSet<char>("0123456789");
+        internal static readonly IReadOnlySet<char> HexDigits = new HashSet<char>("abcdef");
+        internal static readonly IReadOnlySet<char> Separators = new HashSet<char>(" \\\r\n\t");
+        internal static readonly IReadOnlySet<char> NumberEnd = new HashSet<char>("ulfd");
+        internal static readonly IReadOnlySet<char> Operators = new HashSet<char>("+-*/%<>=~!^|&?:");
+        internal static readonly IReadOnlySet<char> Punctuators = new HashSet<char>(",;()[]{}");
+        internal static readonly IReadOnlySet<string> Keywords = new HashSet<string>
         {
             "auto",
             "break",
@@ -89,6 +84,6 @@ namespace CMacroParser.Tokenizer
             bool first = true;
             return string.Join(' ', tokens.Select(t => t.Value));
         }
-        
+
     }
 }

@@ -1,10 +1,5 @@
 ﻿using CMacroParser.Contracts;
 using CMacroParser.Models.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CMacroParser.Models.Expressions
 {
@@ -27,19 +22,6 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
-        {
-            return Expression.ContainsUnknown(definitions);
-        }
-        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
-        {
-            return new UnaryOperatorExpression()
-            {
-                IsSuffixOperator = IsSuffixOperator,
-                Operator = Operator,
-                Expression = Expression.Expand(definitions),
-            };
-        }
         public override string Serialize()
         {
             if (!IsSuffixOperator)
@@ -66,20 +48,6 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
-        {
-            return LeftExpression.ContainsUnknown(definitions) |
-                RightExpression.ContainsUnknown(definitions);
-        }
-        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
-        {
-            return new BinaryOperatorExpression()
-            {
-                LeftExpression = LeftExpression.Expand(definitions),
-                Operator = Operator,
-                RightExpression = RightExpression.Expand(definitions),
-            };
-        }
         public override string Serialize()
         {
             return $"({LeftExpression.Serialize()} {Operator.Value} {RightExpression.Serialize()})";
@@ -108,23 +76,6 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override bool ContainsUnknown(IEnumerable<IMacroDefinition> definitions)
-        {
-            return Condition.ContainsUnknown(definitions) |
-                TrueExpression.ContainsUnknown(definitions) |
-                FalseExpression.ContainsUnknown(definitions);
-        }
-        public override IExpression Expand(IEnumerable<IMacroDefinition> definitions)
-        {
-            return new TernaryOperatorExpression()
-            {
-                Condition = Condition.Expand(definitions),
-                Operator1 = Operator1,
-                TrueExpression = TrueExpression.Expand(definitions),
-                Operator2 = Operator2,
-                FalseExpression = FalseExpression.Expand(definitions)
-            };
-        }
         public override string Serialize()
         {
             return $"({Condition.Serialize()} {Operator1.Value} {TrueExpression.Serialize()} {Operator2.Value} {FalseExpression.Serialize()})";
