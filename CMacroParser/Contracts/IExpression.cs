@@ -10,6 +10,6 @@
         /// <summary>
         /// Serialize expression to text
         /// </summary>
-        string Serialize();
+        string Serialize(ISerializerOptions? options = null);
     }
 }

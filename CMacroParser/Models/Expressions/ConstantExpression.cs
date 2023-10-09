@@ -15,9 +15,10 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
-            return Value.Value;
+            options ??= ISerializerOptions.Default;
+            return $"{Value.Value}{options.GetLiteralSuffix(Value.LiteralType)}";
         }
     }
 }

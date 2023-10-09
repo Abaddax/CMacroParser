@@ -20,6 +20,6 @@
         /// <summary>
         /// Serialize definition to text
         /// </summary>
-        string Serialize();
+        string Serialize(ISerializerOptions? options = null);
     }
 }

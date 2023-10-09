@@ -15,7 +15,7 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
             if (Value.IsCall)
                 throw new NotSupportedException();

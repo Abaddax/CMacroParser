@@ -25,11 +25,11 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
             if (!Value.IsCall)
                 throw new NotSupportedException();
-            return $"{Value.Value}({string.Join(", ", Arguments.Select(a => a.Serialize()))})";
+            return $"{Value.Value}({string.Join(", ", Arguments.Select(a => a.Serialize(options)))})";
         }
     }
 }

@@ -249,7 +249,7 @@ namespace CMacroParser
             expression = expression.Expand(definitions);
             return expression switch
             {
-                GroupExpression e => IsConst(e, definitions),
+                GroupExpression e => IsConst(e.Expression, definitions),
                 CallExpression e => false,
                 CastExpression e => IsConst(e.Value, definitions),
                 ConstantExpression e => true,

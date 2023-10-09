@@ -22,9 +22,9 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
-            return $"({this.DeduceType()}){Value.Serialize()}";
+            return $"({this.DeduceType()}){Value.Serialize(options)}";
         }
     }
 }

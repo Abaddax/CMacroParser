@@ -7,9 +7,14 @@ namespace CMacroParser.Models.Definitions
         public string Name { get; init; }
         public string[] Args { get; init; }
         public IExpression? Expression { get; init; }
-        public string Serialize()
+
+        public string Serialize(ISerializerOptions? options)
         {
-            throw new NotImplementedException();
+            return $"{Name}({string.Join(", ", Args)}) = {Expression?.Serialize(options) ?? "empty"}";
+        }
+        public override string ToString()
+        {
+            return Serialize(null);
         }
     }
 }

@@ -18,9 +18,9 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
-            var ser = Expression.Serialize();
+            var ser = Expression.Serialize(options);
             if (ser.StartsWith('(') && ser.EndsWith(')'))
                 return ser;
             return $"({ser})";

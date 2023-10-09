@@ -22,12 +22,12 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
             if (!IsSuffixOperator)
-                return $"{Operator.Value}{Expression.Serialize()}";
+                return $"{Operator.Value}{Expression.Serialize(options)}";
             else
-                return $"{Expression.Serialize()}{Operator.Value}";
+                return $"{Expression.Serialize(options)}{Operator.Value}";
         }
     }
     internal class BinaryOperatorExpression : ExpressionBase
@@ -48,9 +48,9 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
-            return $"({LeftExpression.Serialize()} {Operator.Value} {RightExpression.Serialize()})";
+            return $"({LeftExpression.Serialize(options)} {Operator.Value} {RightExpression.Serialize(options)})";
         }
     }
     internal class TernaryOperatorExpression : ExpressionBase
@@ -76,9 +76,9 @@ namespace CMacroParser.Models.Expressions
             }
         }
 
-        public override string Serialize()
+        public override string Serialize(ISerializerOptions? options)
         {
-            return $"({Condition.Serialize()} {Operator1.Value} {TrueExpression.Serialize()} {Operator2.Value} {FalseExpression.Serialize()})";
+            return $"({Condition.Serialize(options)} {Operator1.Value} {TrueExpression.Serialize(options)} {Operator2.Value} {FalseExpression.Serialize(options)})";
         }
     }
 }
