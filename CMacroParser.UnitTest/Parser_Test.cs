@@ -49,7 +49,7 @@ namespace CMacroParser.UnitTest
             var expression = Parser.Parser.ParseExpression(input);
 
             Assert.NotNull(expression);
-            Assert.AreEqual(true, expression.Tokens.Any());
+            Assert.IsTrue(expression.Tokens.Any());
 
             Assert.AreEqual(output, expression.Serialize());
         }
@@ -72,10 +72,48 @@ namespace CMacroParser.UnitTest
         [Category("Basic")]
         #region [TestCases]
         [TestCase("123", LiteralType.@int)]
+        [TestCase("0", LiteralType.@int)]
+        [TestCase("-123", LiteralType.@int)]
+        [TestCase("123u", LiteralType.@uint)]
+        [TestCase("0u", LiteralType.@uint)]
+        [TestCase("00u", LiteralType.@uint)]
+        [TestCase("123U", LiteralType.@uint)]
+        [TestCase("0U", LiteralType.@uint)]
+        [TestCase("123l", LiteralType.@long)]
+        [TestCase("0l", LiteralType.@long)]
+        [TestCase("-123l", LiteralType.@long)]
+        [TestCase("123L", LiteralType.@long)]
+        [TestCase("0L", LiteralType.@long)]
+        [TestCase("-123L", LiteralType.@long)]
+        [TestCase("123ll", LiteralType.@long)]
+        [TestCase("0ll", LiteralType.@long)]
+        [TestCase("-123ll", LiteralType.@long)]
+        [TestCase("123LL", LiteralType.@long)]
+        [TestCase("0LL", LiteralType.@long)]
+        [TestCase("-123LL", LiteralType.@long)]
+        [TestCase("123ul", LiteralType.@ulong)]
+        [TestCase("0ul", LiteralType.@ulong)]
+        [TestCase("123UL", LiteralType.@ulong)]
+        [TestCase("0UL", LiteralType.@ulong)]
+        [TestCase("123ull", LiteralType.@ulong)]
+        [TestCase("0ull", LiteralType.@ulong)]
+        [TestCase("123ULL", LiteralType.@ulong)]
+        [TestCase("0ULL", LiteralType.@ulong)]
+        [TestCase("0f", LiteralType.@float)]
+        [TestCase("1.23f", LiteralType.@float)]
+        [TestCase("1.23F", LiteralType.@float)]
+        [TestCase("0.0", LiteralType.@double)]
         [TestCase("1.23", LiteralType.@double)]
+        [TestCase("0.0L", LiteralType.@decimal)]
+        [TestCase("1.23L", LiteralType.@decimal)]
+        [TestCase("1.23l", LiteralType.@decimal)]
+        [TestCase("123 + 1.23f", LiteralType.@float)]
         [TestCase("123 + 1.23", LiteralType.@double)]
         [TestCase("123 / 2 + 1.23", LiteralType.@double)]
         [TestCase("(float)123", LiteralType.@float)]
+        [TestCase("(float)0", LiteralType.@float)]
+        [TestCase("(double)0", LiteralType.@double)]
+        [TestCase("(long double)0", LiteralType.@decimal)]
         [TestCase("true ? 3 : 2e1", LiteralType.@double)]
         [TestCase("1 > 2", LiteralType.@bool)]
         [TestCase("!(1 > 2)", LiteralType.@bool)]
@@ -88,7 +126,9 @@ namespace CMacroParser.UnitTest
             var expression = Parser.Parser.ParseExpression(input);
 
             Assert.NotNull(expression);
-            Assert.AreEqual(true, expression.Tokens.Any());
+            Assert.IsTrue(expression.Tokens.Any());
+
+            var deducedType = expression.DeduceType();
 
             Assert.AreEqual(type, expression.DeduceType());
         }

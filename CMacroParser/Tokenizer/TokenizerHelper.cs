@@ -271,7 +271,7 @@ namespace CMacroParser.Tokenizer
         {
             var value = literal.ToString().ToLowerInvariant();
             //float/double/decimal
-            if (value.Contains('.') || (value.Contains('e') && !value.Contains('x')))
+            if (value.Contains('.') || (value.Contains('e') && !value.Contains('x')) || (value.EndsWith('f') && !value.Contains('x')))
             {
                 if (value.StartsWith('.'))
                     value = '0' + value;
@@ -304,6 +304,10 @@ namespace CMacroParser.Tokenizer
                     if (value.Length == 1)
                     {
                         value = "0";
+                    }
+                    else if (value.Length > 1 && (value[1] == 'u' || value[1] == 'l'))
+                    {
+                        value = value;
                     }
                     //Hex
                     else if (value[1] == 'x')

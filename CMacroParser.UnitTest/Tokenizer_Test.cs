@@ -36,7 +36,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)
@@ -86,7 +86,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)
@@ -140,7 +140,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)
@@ -231,7 +231,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)
@@ -256,7 +256,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)
@@ -279,7 +279,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)
@@ -311,7 +311,7 @@ namespace CMacroParser.UnitTest
         {
             var tokens = Tokenize(input);
 
-            Assert.AreEqual(true, tokens.Any());
+            Assert.IsTrue(tokens.Any());
             Assert.AreEqual(output.Length, tokens.Length);
 
             for (int i = 0; i < tokens.Length; i++)

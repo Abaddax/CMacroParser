@@ -29,7 +29,15 @@ namespace CMacroParser.Parser
         {
             if (tokens.Length < 4)
                 return false;
-            return tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator());
+            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                return true; //(float)
+            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                return true; //(long double)
+            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                return true; //(long long int)
+            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                return true; //(unsigned long long int)
+            return false;
         }
         public static bool IsConstant(this ReadOnlySpan<IToken> tokens)
         {
@@ -87,16 +95,20 @@ namespace CMacroParser.Parser
             if (!tokens.IsCast())
                 throw new InvalidOperationException();
 
-            var target = tokens[1];
-            skip = 3;
+            var targets = tokens.ReadGroup(out var _skip);
 
-            var valueExpr = Parser.ParseSingleExpression(tokens[3..], out int _skip);
+            skip = _skip;
+
+            var valueExpr = Parser.ParseSingleExpression(tokens[skip..], out _skip);
             skip += _skip;
 
             return new CastExpression()
             {
                 Value = valueExpr,
-                TargetType = target,
+                TargetType = new KeywordToken()
+                {
+                    Value = string.Join(" ", targets.ToArray().Select(x => x.Value))
+                }
             };
         }
         public static IExpression ReadConstant(this ReadOnlySpan<IToken> tokens, out int skip)
@@ -210,7 +222,6 @@ namespace CMacroParser.Parser
                     RightExpression = appendUnary.Expression,
                 };
             }
-
             throw new Exception($"Unable to concat '{append}' to '{last}'");
         }
 

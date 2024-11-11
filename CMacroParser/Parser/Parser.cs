@@ -5,7 +5,7 @@ using CMacroParser.Tokenizer;
 
 namespace CMacroParser.Parser
 {
-    public static class Parser
+    internal static class Parser
     {
         //https://en.cppreference.com/w/cpp/language/operator_precedence
         internal static readonly IReadOnlyDictionary<string, int> OperationPrecedence = new Dictionary<string, int>
