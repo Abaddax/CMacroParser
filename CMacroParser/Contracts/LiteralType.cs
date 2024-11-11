@@ -22,6 +22,8 @@
         @bool,
 
         @char,
-        @string
+        @string,
+
+        @custom,
     }
 }

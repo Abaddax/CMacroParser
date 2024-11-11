@@ -11,15 +11,15 @@ namespace CMacroParser
         /// <summary>
         /// Try to deduce the type of the expression
         /// </summary>
-        public static LiteralType DeduceType(this IExpression expression)
+        public static IDeducedType DeduceType(this IExpression expression)
         {
             return expression switch
             {
                 GroupExpression e => DeduceType(e.Expression),
-                CallExpression e => LiteralType.unknown,
+                CallExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
                 CastExpression e => DeduceType(e),
-                ConstantExpression e => e.Value.LiteralType,
-                VariableExpression e => LiteralType.unknown,
+                ConstantExpression e => IDeducedType.Create(e.Value.LiteralType.ToString(), e.Value.LiteralType),
+                VariableExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
                 UnaryOperatorExpression e => DeduceType(e.Expression),
                 BinaryOperatorExpression e => DeduceType(e),
                 TernaryOperatorExpression e => DeduceType(e),
@@ -27,10 +27,10 @@ namespace CMacroParser
             };
         }
 
-        private static LiteralType DeduceType(CastExpression expression)
+        private static IDeducedType DeduceType(CastExpression expression)
         {
             //https://learn.microsoft.com/en-us/cpp/cpp/fundamental-types-cpp?view=msvc-170
-            return expression.TargetType.Value.ToLowerInvariant() switch
+            LiteralType type = expression.TargetType.Value.ToLowerInvariant() switch
             {
                 "void" => LiteralType.@void,
 
@@ -87,33 +87,34 @@ namespace CMacroParser
                 "wchar_t" or
                 "__wchar_t" => LiteralType.@char,
 
-                _ => LiteralType.unknown
+                _ => LiteralType.custom
             };
+            return IDeducedType.Create(expression.TargetType.Value, type);
         }
-        private static LiteralType DeduceType(BinaryOperatorExpression expression)
+        private static IDeducedType DeduceType(BinaryOperatorExpression expression)
         {
             OperationPrecedence.TryGetValue(expression.Operator.Value, out var precedence);
             if (precedence == 9 || precedence == 10) //Binary operators
-                return LiteralType.@bool;
+                return IDeducedType.Create("bool", LiteralType.@bool);
 
             var leftType = DeduceType(expression.LeftExpression);
             var rightType = DeduceType(expression.RightExpression);
-            TypePrecedence.TryGetValue(leftType, out var leftPrecedence);
-            TypePrecedence.TryGetValue(rightType, out var rightPrecedence);
+            TypePrecedence.TryGetValue(leftType.Deduced, out var leftPrecedence);
+            TypePrecedence.TryGetValue(rightType.Deduced, out var rightPrecedence);
 
             if (leftPrecedence < rightPrecedence)
                 return leftType;
-            else if (leftPrecedence == rightPrecedence && leftType != rightType)
-                throw new Exception($"Unable to deduce type of {leftType} and {rightType}.");
+            else if (leftPrecedence == rightPrecedence && leftType.Deduced != rightType.Deduced)
+                throw new Exception($"Unable to deduce type of {leftType.Deduced} and {rightType.Deduced}.");
             else
                 return rightType;
         }
-        private static LiteralType DeduceType(TernaryOperatorExpression expression)
+        private static IDeducedType DeduceType(TernaryOperatorExpression expression)
         {
             var trueType = DeduceType(expression.TrueExpression);
             var falseType = DeduceType(expression.FalseExpression);
-            TypePrecedence.TryGetValue(trueType, out var truePrecedence);
-            TypePrecedence.TryGetValue(falseType, out var falsePrecedence);
+            TypePrecedence.TryGetValue(trueType.Deduced, out var truePrecedence);
+            TypePrecedence.TryGetValue(falseType.Deduced, out var falsePrecedence);
 
             if (falsePrecedence < truePrecedence)
                 return falseType;

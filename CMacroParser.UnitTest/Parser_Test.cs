@@ -57,15 +57,26 @@ namespace CMacroParser.UnitTest
         [Test]
         [Category("Basic")]
         #region [TestCases]
-        [TestCase("A 2", LiteralType.@int)]
-        [TestCase("#define B 3", LiteralType.@double)]
-        [TestCase("FUNC(A) A * 2", LiteralType.@double)]
+        [TestCase("A 2", "A")]
+        [TestCase("#define B 3", "B")]
+        [TestCase("FUNC(A) A * 2", "FUNC", "A")]
+        [TestCase("FUNC(A) A + B", "FUNC", "A")]
         #endregion
-        public void T2_ParseDefinition(string input, LiteralType type)
+        public void T2_ParseDefinition(string input, string name, params string[] args)
         {
             var definition = Parser.Parser.ParseDefinition(input);
 
             Assert.NotNull(definition);
+            Assert.NotNull(definition.Expression);
+
+            Assert.AreEqual(name, definition.Name);
+
+            if (args.Length > 0)
+                Assert.NotNull(definition.Args);
+            for (int i = 0; i < args.Length; i++)
+            {
+                Assert.AreEqual(args[i], definition.Args![i]);
+            }
         }
 
         [Test]
@@ -120,6 +131,8 @@ namespace CMacroParser.UnitTest
         [TestCase("2.3 != 3", LiteralType.@bool)]
         [TestCase("\"test\"", LiteralType.@string)]
         [TestCase("(int)((double)2 + 3)", LiteralType.@int)]
+        [TestCase("A + 1", LiteralType.unknown)]
+        [TestCase("(HRESULT)0L", LiteralType.custom)]
         #endregion
         public void T3_DeduceType(string input, LiteralType type)
         {
@@ -130,7 +143,8 @@ namespace CMacroParser.UnitTest
 
             var deducedType = expression.DeduceType();
 
-            Assert.AreEqual(type, expression.DeduceType());
+            Assert.IsNotNull(deducedType);
+            Assert.AreEqual(type, deducedType.Deduced);
         }
 
         [Test]
