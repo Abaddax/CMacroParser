@@ -244,7 +244,7 @@ namespace CMacroParser
         /// <summary>
         /// Check if expression in a compile-time-const
         /// </summary>
-        public static bool IsConst(this IExpression expression, IEnumerable<IMacroDefinition> definitions = null)
+        public static bool IsConst(this IExpression expression, IEnumerable<IMacroDefinition>? definitions = null)
         {
             definitions ??= Enumerable.Empty<IMacroDefinition>();
             expression = expression.Expand(definitions);
