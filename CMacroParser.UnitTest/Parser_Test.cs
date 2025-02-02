@@ -61,6 +61,7 @@ namespace CMacroParser.UnitTest
         [TestCase("#define B 3", "B")]
         [TestCase("FUNC(A) A * 2", "FUNC", "A")]
         [TestCase("FUNC(A) A + B", "FUNC", "A")]
+        [TestCase("FAILED(hr) (((HRESULT)(hr)) < 0)", "FAILED", "hr")]
         #endregion
         public void T2_ParseDefinition(string input, string name, params string[] args)
         {
