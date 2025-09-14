@@ -1,6 +1,8 @@
 ﻿using CMacroParser.Contracts;
 using CMacroParser.Models.Tokens;
+using System.Buffers.Binary;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using static CMacroParser.Tokenizer.Tokenizer;
 
 namespace CMacroParser.Tokenizer
@@ -157,12 +159,25 @@ namespace CMacroParser.Tokenizer
                     else if (chars[skip] == '\'')
                         break;
                 }
-                return new LiteralToken()
+                var charCount = skip - chars[0..skip].Count('\\') - 1;
+                if (charCount == 1)
                 {
-                    Value = chars[0..++skip].ToString(),
-                    LiteralType = LiteralType.@char,
-                    OriginalContent = chars[0..skip].ToString()
-                };
+                    return new LiteralToken()
+                    {
+                        Value = chars[0..++skip].ToString(),
+                        LiteralType = LiteralType.@char,
+                        OriginalContent = chars[0..skip].ToString()
+                    };
+                }
+                //'abcd'-> int
+                else if (charCount > 1 && charCount <= 4)
+                {
+                    return ParseNumericLiteral(chars[0..++skip]);
+                }
+                else
+                {
+                    throw new Exception($"Unable to parse char-literal. ({chars})");
+                }
             }
             //String
             else if (chars.StartsWith("\""))
@@ -246,7 +261,9 @@ namespace CMacroParser.Tokenizer
                 return ParseNumericLiteral(chars[0..skip]);
             }
             else
-                throw new Exception("unreachable");
+            {
+                throw new Exception($"Unable to read literal. ({chars})");
+            }
         }
         public static IToken ReadIdentifier(this ReadOnlySpan<char> chars, out int skip)
         {
@@ -269,87 +286,116 @@ namespace CMacroParser.Tokenizer
 
         private static IToken ParseNumericLiteral(this ReadOnlySpan<char> literal)
         {
-            var value = literal.ToString().ToLowerInvariant();
-            //float/double/decimal
-            if (value.Contains('.') || (value.Contains('e') && !value.Contains('x')) || (value.EndsWith('f') && !value.Contains('x')))
-            {
-                if (value.StartsWith('.'))
-                    value = '0' + value;
-                var type = LiteralType.@double;
-                if (value.Contains('f'))
-                    type = LiteralType.@float;
-                else if (value.Contains('d'))
-                    type = LiteralType.@double;
-                else if (value.Contains('l'))
-                    type = LiteralType.@decimal;
-                value = value.Replace("f", "").Replace("d", "").Replace("l", "");
+            if (literal.Length == 0)
+                throw new ArgumentException("Literal is empty", nameof(literal));
 
-                return (type, value) switch
-                {
-                    var (t, v) when t == LiteralType.@float && TryParse(() => float.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@float, OriginalContent = literal.ToString() },
-                    var (t, v) when t == LiteralType.@double && TryParse(() => double.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@double, OriginalContent = literal.ToString() },
-                    var (t, v) when t == LiteralType.@decimal && TryParse(() => decimal.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@decimal, OriginalContent = literal.ToString() },
-                    _ => throw new Exception($"Unable to parse floating-point-literal. ({literal})")
-                };
-            }
-            //integer
-            else
+            //Special case for char -> integer
+            if (literal[0] == '\'' && literal[^1] == '\'')
             {
-                int numBase = 10;
-                if (value[0] == '0')
+                List<char> characters = new();
+                for (int i = 1; i < literal.Length - 1; i++)
                 {
-                    if (value.Length == 1)
+                    if (literal[i] == '\\')
                     {
-                        value = "0";
+                        characters.Add(Regex.Unescape(literal.Slice(i, 2).ToString())[0]);
+                        i++;
                     }
-                    else if (value.Length > 1 && (value[1] == 'u' || value[1] == 'l'))
-                    {
-                        value = value;
-                    }
-                    //Hex
-                    else if (value[1] == 'x')
-                    {
-                        numBase = 16;
-                        value = string.Concat(value.Skip(2));
-                    }
-                    //Binary
-                    else if (value[1] == 'b')
-                    {
-                        numBase = 2;
-                        value = string.Concat(value.Skip(2));
-                    }
-                    //Octal
                     else
                     {
-                        numBase = 8;
-                        value = string.Concat(value.Skip(1));
+                        characters.Add(literal[i]);
                     }
                 }
-
-                var type = LiteralType.@int;
-                if (value.Contains('u') && value.Contains('l'))
-                    type = LiteralType.@ulong;
-                else if (value.Contains('l'))
-                    type = LiteralType.@long;
-                else if (value.Contains('u'))
-                    type = LiteralType.@uint;
-                value = value.Replace("u", "").Replace("l", "");
-
-                return (type, value) switch
+                if (characters.Count < 1 || characters.Count > 4)
+                    throw new Exception($"Unable to parse integer-literal. ({literal})");
+                while (characters.Count < 4)
+                    characters.Insert(0, '\0');
+                int value = BinaryPrimitives.ReadInt32BigEndian(characters.Select(x => (byte)x).ToArray());
+                return new LiteralToken() { Value = value.ToString(), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() };
+            }
+            else
+            {
+                var value = literal.ToString().ToLowerInvariant();
+                //float/double/decimal
+                if (value.Contains('.') || (value.Contains('e') && !value.Contains('x')) || (value.EndsWith('f') && !value.Contains('x')))
                 {
-                    var (t, v) when t == LiteralType.@int && TryParse(() => Convert.ToInt32(v, numBase), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() },
-                    var (t, v) when t == LiteralType.@uint && TryParse(() => Convert.ToUInt32(v, numBase), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@uint, OriginalContent = literal.ToString() },
-                    var (t, v) when t == LiteralType.@long && TryParse(() => Convert.ToInt64(v, numBase), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@long, OriginalContent = literal.ToString() },
-                    var (t, v) when t == LiteralType.@ulong && TryParse(() => Convert.ToUInt64(v, numBase), out var _value) =>
-                        new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@ulong, OriginalContent = literal.ToString() },
-                    _ => throw new Exception($"Unable to parse integer-literal. ({literal})")
-                };
+                    if (value.StartsWith('.'))
+                        value = '0' + value;
+                    var type = LiteralType.@double;
+                    if (value.Contains('f'))
+                        type = LiteralType.@float;
+                    else if (value.Contains('d'))
+                        type = LiteralType.@double;
+                    else if (value.Contains('l'))
+                        type = LiteralType.@decimal;
+                    value = value.Replace("f", "").Replace("d", "").Replace("l", "");
+
+                    return (type, value) switch
+                    {
+                        var (t, v) when t == LiteralType.@float && TryParse(() => float.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@float, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@double && TryParse(() => double.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@double, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@decimal && TryParse(() => decimal.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@decimal, OriginalContent = literal.ToString() },
+                        _ => throw new Exception($"Unable to parse floating-point-literal. ({literal})")
+                    };
+                }
+                //integer
+                else
+                {
+                    int numBase = 10;
+                    if (value[0] == '0')
+                    {
+                        if (value.Length == 1)
+                        {
+                            value = "0";
+                        }
+                        else if (value.Length > 1 && (value[1] == 'u' || value[1] == 'l'))
+                        {
+                            value = value;
+                        }
+                        //Hex
+                        else if (value[1] == 'x')
+                        {
+                            numBase = 16;
+                            value = string.Concat(value.Skip(2));
+                        }
+                        //Binary
+                        else if (value[1] == 'b')
+                        {
+                            numBase = 2;
+                            value = string.Concat(value.Skip(2));
+                        }
+                        //Octal
+                        else
+                        {
+                            numBase = 8;
+                            value = string.Concat(value.Skip(1));
+                        }
+                    }
+
+                    var type = LiteralType.@int;
+                    if (value.Contains('u') && value.Contains('l'))
+                        type = LiteralType.@ulong;
+                    else if (value.Contains('l'))
+                        type = LiteralType.@long;
+                    else if (value.Contains('u'))
+                        type = LiteralType.@uint;
+                    value = value.Replace("u", "").Replace("l", "");
+
+                    return (type, value) switch
+                    {
+                        var (t, v) when t == LiteralType.@int && TryParse(() => Convert.ToInt32(v, numBase), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@uint && TryParse(() => Convert.ToUInt32(v, numBase), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@uint, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@long && TryParse(() => Convert.ToInt64(v, numBase), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@long, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@ulong && TryParse(() => Convert.ToUInt64(v, numBase), out var _value) =>
+                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@ulong, OriginalContent = literal.ToString() },
+                        _ => throw new Exception($"Unable to parse integer-literal. ({literal})")
+                    };
+                }
             }
         }
         private static bool TryParse<T>(Func<T> func, out T? value)

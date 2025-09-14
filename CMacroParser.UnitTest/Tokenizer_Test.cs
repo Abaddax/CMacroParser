@@ -199,6 +199,9 @@ namespace CMacroParser.UnitTest
         [TestCase("0xfffffffe", LiteralType.@int, "-2")]
         [TestCase("0b0101", LiteralType.@int, "5")]
         [TestCase("012", LiteralType.@int, "10")]
+        [TestCase("'ab'", LiteralType.@int, "24930")]
+        [TestCase("'\\1\\2\\3'", LiteralType.@int, "66051")]
+        [TestCase("'abcd'", LiteralType.@int, "1633837924")]
         #endregion
         #region UInt
         [TestCase("123u", LiteralType.@uint, "123")]
