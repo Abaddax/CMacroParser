@@ -24,7 +24,7 @@ namespace CMacroParser.Models.Expressions
 
         public override string Serialize(ISerializerOptions? options)
         {
-            return $"({this.DeduceType()}){Value.Serialize(options)}";
+            return $"({this.DeduceType()})({Value.Serialize(options)})";
         }
     }
 }
