@@ -5,17 +5,17 @@ using CMacroParser.Tokenizer;
 namespace CMacroParser.UnitTest
 {
     [TestFixture]
-    public class Tokenizer_Test
+    public class TokenizerTests
     {
         private static IToken[] Tokenize(string expression) => expression.Tokenize().ToArray();
         private static void AssertAreEqual(TokenType type, string value, IToken actual)
         {
-            Assert.AreEqual(type, actual.TokenType);
-            Assert.AreEqual(value, actual.Value);
+            Assert.That(actual.TokenType, Is.EqualTo(type));
+            Assert.That(actual.Value, Is.EqualTo(value));
         }
         private static TToken AssertTokenType<TToken>(IToken actual)
         {
-            Assert.IsTrue(actual is TToken);
+            Assert.That(actual, Is.TypeOf<TToken>());
             return (TToken)actual;
         }
 
@@ -32,12 +32,12 @@ namespace CMacroParser.UnitTest
         [TestCase("}", "}")]
         [TestCase(",;()[]{}", ",", ";", "(", ")", "[", "]", "{", "}")]
         #endregion
-        public void T1_Punctuators(string input, params string[] output)
+        public void ShouldTokenizePunctuators(string input, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
@@ -82,12 +82,12 @@ namespace CMacroParser.UnitTest
         [TestCase("volatile", "volatile")]
         [TestCase("while", "while")]
         #endregion
-        public void T2_Keywords(string input, params string[] output)
+        public void ShouldTokenizeKeywords(string input, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
@@ -136,12 +136,12 @@ namespace CMacroParser.UnitTest
         [TestCase("->", "->")]
         [TestCase("->*", "->*")]
         #endregion
-        public void T3_Operators(string input, params string[] output)
+        public void ShouldTokenizeOperators(string input, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
@@ -230,20 +230,20 @@ namespace CMacroParser.UnitTest
         [TestCase("false", LiteralType.@bool, "false")]
         #endregion
         #endregion
-        public void T4_Literals(string input, LiteralType literalType, params string[] output)
+        public void ShouldTokenizeLiterals(string input, LiteralType literalType, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
                 AssertAreEqual(TokenType.Literal, output[i], tokens[i]);
                 var token = AssertTokenType<LiteralToken>(tokens[i]);
 
-                Assert.AreEqual(token.OriginalContent, input);
-                Assert.AreEqual(literalType, token.LiteralType);
+                Assert.That(token.OriginalContent, Is.EqualTo(input));
+                Assert.That(token.LiteralType, Is.EqualTo(literalType));
             }
         }
 
@@ -255,12 +255,12 @@ namespace CMacroParser.UnitTest
         [TestCase("func2", "func2")]
         [TestCase("FLOAT2INT", "FLOAT2INT")]
         #endregion
-        public void T5_Identifiers(string input, params string[] output)
+        public void ShouldTokenizeIdentifiers(string input, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
@@ -278,12 +278,12 @@ namespace CMacroParser.UnitTest
         [TestCase("MULTILINE(A,\n B)", "@MULTILINE@", "(", "A", ",", "B", ")")]
         [TestCase("SPECIAL_FLAG (1 << 2)", "SPECIAL_FLAG", "(", "1", "<<", "2", ")")]
         #endregion
-        public void T6_Calls(string input, params string[] output)
+        public void ShouldTokenizeCalls(string input, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
@@ -293,11 +293,11 @@ namespace CMacroParser.UnitTest
                 if (tokens[i] is IdentifierToken token)
                 {
                     AssertAreEqual(TokenType.Identifier, output[i], tokens[i]);
-                    Assert.AreEqual(isCall, token.IsCall);
+                    Assert.That(token.IsCall, Is.EqualTo(isCall));
                 }
                 else
                 {
-                    Assert.AreEqual(output[i], tokens[i].Value);
+                    Assert.That(tokens[i].Value, Is.EqualTo(output[i]));
                 }
             }
         }
@@ -310,16 +310,16 @@ namespace CMacroParser.UnitTest
         [TestCase("-1 >> -2", "-", "1", ">>", "-", "2")]
         [TestCase("(int)(1.2 + 3.4f)", "(", "int", ")", "(", "1.2", "+", "3.4", ")")]
         #endregion
-        public void T7_Expressions(string input, params string[] output)
+        public void ShouldTokenizeExpressions(string input, params string[] output)
         {
             var tokens = Tokenize(input);
 
-            Assert.IsTrue(tokens.Any());
-            Assert.AreEqual(output.Length, tokens.Length);
+            Assert.That(tokens.Any(), Is.True);
+            Assert.That(tokens.Length, Is.EqualTo(output.Length));
 
             for (int i = 0; i < tokens.Length; i++)
             {
-                Assert.AreEqual(output[i], tokens[i].Value);
+                Assert.That(tokens[i].Value, Is.EqualTo(output[i]));
             }
         }
 

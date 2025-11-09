@@ -3,7 +3,7 @@
 namespace CMacroParser.UnitTest
 {
     [TestFixture]
-    public class Parser_Test
+    public class ParserTests
     {
         [Test]
         [Category("Basic")]
@@ -44,14 +44,14 @@ namespace CMacroParser.UnitTest
         [TestCase("!(1 > 2)", "!(1 > 2)")]
         [TestCase("!(1 > FUNC(A))", "!(1 > FUNC(A))")]
         #endregion
-        public void T1_ParseExpression(string input, string output)
+        public void ShouldParseExpression(string input, string output)
         {
             var expression = Parser.Parser.ParseExpression(input);
 
-            Assert.NotNull(expression);
-            Assert.IsTrue(expression.Tokens.Any());
+            Assert.That(expression, Is.Not.Null);
+            Assert.That(expression.Tokens.Any(), Is.True);
 
-            Assert.AreEqual(output, expression.Serialize());
+            Assert.That(expression.Serialize(), Is.EqualTo(output));
         }
 
         [Test]
@@ -63,20 +63,20 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(A) A + B", "FUNC", "A")]
         [TestCase("FAILED(hr) (((HRESULT)(hr)) < 0)", "FAILED", "hr")]
         #endregion
-        public void T2_ParseDefinition(string input, string name, params string[] args)
+        public void ShouldParseDefinition(string input, string name, params string[] args)
         {
             var definition = Parser.Parser.ParseDefinition(input);
 
-            Assert.NotNull(definition);
-            Assert.NotNull(definition.Expression);
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(definition.Expression, Is.Not.Null);
 
-            Assert.AreEqual(name, definition.Name);
+            Assert.That(definition.Name, Is.EqualTo(name));
 
             if (args.Length > 0)
-                Assert.NotNull(definition.Args);
+                Assert.That(definition.Args, Is.Not.Null);
             for (int i = 0; i < args.Length; i++)
             {
-                Assert.AreEqual(args[i], definition.Args![i]);
+                Assert.That(definition.Args![i], Is.EqualTo(args[i]));
             }
         }
 
@@ -135,17 +135,17 @@ namespace CMacroParser.UnitTest
         [TestCase("A + 1", LiteralType.unknown)]
         [TestCase("(HRESULT)0L", LiteralType.custom)]
         #endregion
-        public void T3_DeduceType(string input, LiteralType type)
+        public void ShouldDeduceType(string input, LiteralType type)
         {
             var expression = Parser.Parser.ParseExpression(input);
 
-            Assert.NotNull(expression);
-            Assert.IsTrue(expression.Tokens.Any());
+            Assert.That(expression, Is.Not.Null);
+            Assert.That(expression.Tokens.Any(), Is.True);
 
             var deducedType = expression.DeduceType();
 
-            Assert.IsNotNull(deducedType);
-            Assert.AreEqual(type, deducedType.Deduced);
+            Assert.That(deducedType, Is.Not.Null);
+            Assert.That(deducedType.Deduced, Is.EqualTo(type));
         }
 
         [Test]
@@ -157,12 +157,12 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, B)", false, "FUNC(a,b) a+b", "B A")]
         [TestCase("FUNC(3e2, B)", true, "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void T4_IsConst(string input, bool isConst, params string[] definitions)
+        public void ShouldCalculateIsConst(string input, bool isConst, params string[] definitions)
         {
             var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
             var expr = Parser.Parser.ParseExpression(input);
 
-            Assert.AreEqual(isConst, expr.IsConst(defs));
+            Assert.That(expr.IsConst(defs), Is.EqualTo(isConst));
         }
 
         [Test]
@@ -174,12 +174,12 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, B)", true, "FUNC(a,b) a+b", "B A")]
         [TestCase("FUNC(3e2, B)", false, "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void T5_ContainsUnknown(string input, bool containsUnknown, params string[] definitions)
+        public void ShouldCalculateContainsUnknown(string input, bool containsUnknown, params string[] definitions)
         {
             var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
             var expr = Parser.Parser.ParseExpression(input);
 
-            Assert.AreEqual(containsUnknown, expr.ContainsUnknown(defs));
+            Assert.That(expr.ContainsUnknown(defs), Is.EqualTo(containsUnknown));
         }
 
         [Test]
@@ -191,16 +191,16 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, B)", "(300 + A)", "FUNC(a,b) a+b", "B A")]
         [TestCase("FUNC(3e2, B)", "(300 + 2)", "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void T6_Expand(string input, string output, params string[] definitions)
+        public void ShouldExpand(string input, string output, params string[] definitions)
         {
             var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
             var expr = Parser.Parser.ParseExpression(input);
 
             var expanded = expr.Expand(defs);
 
-            Assert.NotNull(expanded);
+            Assert.That(expanded, Is.Not.Null);
 
-            Assert.AreEqual(output, expanded.Serialize());
+            Assert.That(expanded.Serialize(), Is.EqualTo(output));
         }
     }
 }
