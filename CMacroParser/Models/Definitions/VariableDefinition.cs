@@ -2,7 +2,7 @@
 
 namespace CMacroParser.Models.Definitions
 {
-    internal class VariableDefinition : IMacroDefinition
+    internal sealed class VariableDefinition : IMacroDefinition
     {
         public string Name { get; init; }
         public string[]? Args => null;

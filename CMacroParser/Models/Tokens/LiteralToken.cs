@@ -2,10 +2,10 @@
 
 namespace CMacroParser.Models.Tokens
 {
-    internal class LiteralToken : TokenBase
+    internal sealed class LiteralToken : TokenBase
     {
         public override TokenType TokenType => TokenType.Literal;
-        public string OriginalContent { get; init; }
-        public LiteralType LiteralType { get; init; }
+        public required string OriginalContent { get; init; }
+        public required LiteralType LiteralType { get; init; }
     }
 }

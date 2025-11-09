@@ -3,9 +3,9 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
-    internal class GroupExpression : ExpressionBase
+    internal sealed class GroupExpression : ExpressionBase
     {
-        public IExpression Expression { get; init; }
+        public required IExpression Expression { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {

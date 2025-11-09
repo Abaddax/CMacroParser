@@ -3,10 +3,10 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
-    internal class CallExpression : ExpressionBase
+    internal sealed class CallExpression : ExpressionBase
     {
-        public IdentifierToken Value { get; init; }
-        public IExpression[] Arguments { get; init; }
+        public required IdentifierToken Value { get; init; }
+        public required IExpression[] Arguments { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {

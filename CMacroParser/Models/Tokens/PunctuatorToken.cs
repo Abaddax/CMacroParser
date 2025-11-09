@@ -2,7 +2,7 @@
 
 namespace CMacroParser.Models.Tokens
 {
-    internal class PunctuatorToken : TokenBase
+    internal sealed class PunctuatorToken : TokenBase
     {
         public override TokenType TokenType => TokenType.Punctuator;
     }

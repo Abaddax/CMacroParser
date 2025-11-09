@@ -3,11 +3,11 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
-    internal class UnaryOperatorExpression : ExpressionBase
+    internal sealed class UnaryOperatorExpression : ExpressionBase
     {
-        public bool IsSuffixOperator { get; init; }
-        public OperatorToken Operator { get; init; }
-        public IExpression Expression { get; init; }
+        public required bool IsSuffixOperator { get; init; }
+        public required OperatorToken Operator { get; init; }
+        public required IExpression Expression { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {

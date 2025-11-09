@@ -3,10 +3,10 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
-    internal class CastExpression : ExpressionBase
+    internal sealed class CastExpression : ExpressionBase
     {
-        public IExpression Value { get; init; }
-        public IToken TargetType { get; init; }
+        public required IExpression Value { get; init; }
+        public required IToken TargetType { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {

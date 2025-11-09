@@ -2,7 +2,7 @@
 
 namespace CMacroParser.Models.Tokens
 {
-    internal class KeywordToken : TokenBase
+    internal sealed class KeywordToken : TokenBase
     {
         public override TokenType TokenType => TokenType.Keyword;
     }

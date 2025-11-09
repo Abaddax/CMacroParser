@@ -2,7 +2,7 @@
 
 namespace CMacroParser.Models.Tokens
 {
-    internal class OperatorToken : TokenBase
+    internal sealed class OperatorToken : TokenBase
     {
         public override TokenType TokenType => TokenType.Operator;
     }

@@ -5,7 +5,7 @@ namespace CMacroParser.Models.Expressions
 {
     internal sealed class ConstantExpression : ExpressionBase
     {
-        public LiteralToken Value { get; init; }
+        public required LiteralToken Value { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {

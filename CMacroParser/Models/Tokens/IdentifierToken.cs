@@ -2,9 +2,9 @@
 
 namespace CMacroParser.Models.Tokens
 {
-    internal class IdentifierToken : TokenBase
+    internal sealed class IdentifierToken : TokenBase
     {
         public override TokenType TokenType => TokenType.Identifier;
-        public bool IsCall { get; init; }
+        public required bool IsCall { get; init; }
     }
 }
