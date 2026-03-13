@@ -3,6 +3,9 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
+    /// <remarks>
+    /// (PI * 2)
+    /// </remarks>
     internal sealed class GroupExpression : ExpressionBase
     {
         public required IExpression Expression { get; init; }

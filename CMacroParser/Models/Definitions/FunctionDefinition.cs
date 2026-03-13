@@ -4,9 +4,9 @@ namespace CMacroParser.Models.Definitions
 {
     internal sealed class FunctionDefinition : IMacroDefinition
     {
-        public string Name { get; init; }
-        public string[] Args { get; init; }
-        public IExpression? Expression { get; init; }
+        public required string Name { get; init; }
+        public required string[] Args { get; init; }
+        public required IExpression? Expression { get; init; }
 
         public string Serialize(ISerializerOptions? options)
         {

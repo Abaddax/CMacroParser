@@ -3,6 +3,9 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
+    /// <remarks>
+    /// FUNC(A, B)
+    /// </remarks>
     internal sealed class CallExpression : ExpressionBase
     {
         public required IdentifierToken Value { get; init; }

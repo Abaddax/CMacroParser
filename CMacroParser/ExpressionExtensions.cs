@@ -1,4 +1,4 @@
-﻿using CMacroParser.Contracts;
+using CMacroParser.Contracts;
 using CMacroParser.Models.Definitions;
 using CMacroParser.Models.Expressions;
 using static CMacroParser.Parser.Parser;
@@ -7,27 +7,29 @@ namespace CMacroParser
 {
     public static class ExpressionExtensions
     {
-        #region DeduceType
+        #region DeduceLiteralType
         /// <summary>
-        /// Try to deduce the type of the expression
+        /// Try to deduce the type of the literal/expression
         /// </summary>
-        public static IDeducedType DeduceType(this IExpression expression)
+        public static IDeducedType DeduceLiteralType(this IExpression expression)
         {
             return expression switch
             {
-                GroupExpression e => DeduceType(e.Expression),
+                GroupExpression e => DeduceLiteralType(e.Expression),
                 CallExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
-                CastExpression e => DeduceType(e),
+                CastExpression e => DeduceLiteralType(e),
                 ConstantExpression e => IDeducedType.Create(e.Value.LiteralType.ToString(), e.Value.LiteralType),
+                KeywordExpression e => DeduceLiteralType(e),
                 VariableExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
-                UnaryOperatorExpression e => DeduceType(e.Expression),
-                BinaryOperatorExpression e => DeduceType(e),
-                TernaryOperatorExpression e => DeduceType(e),
+                UnaryOperatorExpression e => DeduceLiteralType(e.Expression),
+                BinaryOperatorExpression e => DeduceLiteralType(e),
+                TernaryOperatorExpression e => DeduceLiteralType(e),
+                UnknownExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
                 _ => throw new NotSupportedException()
             };
         }
 
-        private static IDeducedType DeduceType(CastExpression expression)
+        private static IDeducedType DeduceLiteralType(CastExpression expression)
         {
             //https://learn.microsoft.com/en-us/cpp/cpp/fundamental-types-cpp?view=msvc-170
             LiteralType type = expression.TargetType.Value.ToLowerInvariant() switch
@@ -91,14 +93,20 @@ namespace CMacroParser
             };
             return IDeducedType.Create(expression.TargetType.Value, type);
         }
-        private static IDeducedType DeduceType(BinaryOperatorExpression expression)
+        private static IDeducedType DeduceLiteralType(KeywordExpression expression)
+        {
+            if (!Enum.TryParse<LiteralType>(expression.Value.Value, out var literalType))
+                return IDeducedType.Create(string.Empty, LiteralType.unknown);
+            return IDeducedType.Create(literalType.ToString(), literalType);
+        }
+        private static IDeducedType DeduceLiteralType(BinaryOperatorExpression expression)
         {
             OperationPrecedence.TryGetValue(expression.Operator.Value, out var precedence);
             if (precedence == 9 || precedence == 10) //Binary operators
                 return IDeducedType.Create("bool", LiteralType.@bool);
 
-            var leftType = DeduceType(expression.LeftExpression);
-            var rightType = DeduceType(expression.RightExpression);
+            var leftType = DeduceLiteralType(expression.LeftExpression);
+            var rightType = DeduceLiteralType(expression.RightExpression);
             TypePrecedence.TryGetValue(leftType.Deduced, out var leftPrecedence);
             TypePrecedence.TryGetValue(rightType.Deduced, out var rightPrecedence);
 
@@ -109,10 +117,10 @@ namespace CMacroParser
             else
                 return rightType;
         }
-        private static IDeducedType DeduceType(TernaryOperatorExpression expression)
+        private static IDeducedType DeduceLiteralType(TernaryOperatorExpression expression)
         {
-            var trueType = DeduceType(expression.TrueExpression);
-            var falseType = DeduceType(expression.FalseExpression);
+            var trueType = DeduceLiteralType(expression.TrueExpression);
+            var falseType = DeduceLiteralType(expression.FalseExpression);
             TypePrecedence.TryGetValue(trueType.Deduced, out var truePrecedence);
             TypePrecedence.TryGetValue(falseType.Deduced, out var falsePrecedence);
 
@@ -129,16 +137,19 @@ namespace CMacroParser
         /// </summary>
         public static bool ContainsUnknown(this IExpression expression, IEnumerable<IMacroDefinition> definitions)
         {
+            expression = expression.Expand(definitions);
             return expression switch
             {
                 GroupExpression e => ContainsUnknown(e.Expression, definitions),
                 CallExpression e => ContainsUnknown(e, definitions),
                 CastExpression e => ContainsUnknown(e.Value, definitions),
                 ConstantExpression e => false,
+                KeywordExpression e => false,
                 VariableExpression e => ContainsUnknown(e, definitions),
                 UnaryOperatorExpression e => ContainsUnknown(e.Expression, definitions),
                 BinaryOperatorExpression e => ContainsUnknown(e.LeftExpression, definitions) || ContainsUnknown(e.RightExpression, definitions),
                 TernaryOperatorExpression e => ContainsUnknown(e.Condition, definitions) || ContainsUnknown(e.TrueExpression, definitions) || ContainsUnknown(e.FalseExpression, definitions),
+                UnknownExpression e => true,
                 _ => throw new NotSupportedException()
             };
         }
@@ -171,51 +182,64 @@ namespace CMacroParser
         /// <returns>Expression with known expressions from <paramref name="definitions"/></returns>
         public static IExpression Expand(this IExpression expression, IEnumerable<IMacroDefinition> definitions)
         {
-            return expression switch
+            var referencedExpressions = new HashSet<IExpression>();
+            return expression.Expand(definitions, referencedExpressions);
+        }
+
+        private static IExpression Expand(this IExpression expression, IEnumerable<IMacroDefinition> definitions, ISet<IExpression> referencedExpressions)
+        {
+            //Add itself to tree branch
+            if (!referencedExpressions.Add(expression))
+                throw new Exception("Self referencing loop detected!");
+            var expanded = expression switch
             {
                 GroupExpression e => new GroupExpression()
                 {
-                    Expression = e.Expression.Expand(definitions)
+                    Expression = e.Expression.Expand(definitions, referencedExpressions)
                 },
-                CallExpression e => Expand(e, definitions),
+                CallExpression e => Expand(e, definitions, referencedExpressions),
                 CastExpression e => new CastExpression()
                 {
                     TargetType = e.TargetType,
-                    Value = e.Value.Expand(definitions),
+                    Value = e.Value.Expand(definitions, referencedExpressions),
                 },
                 ConstantExpression e => e,
-                VariableExpression e => Expand(e, definitions),
+                KeywordExpression e => e,
+                VariableExpression e => Expand(e, definitions, referencedExpressions),
                 UnaryOperatorExpression e => new UnaryOperatorExpression()
                 {
                     IsSuffixOperator = e.IsSuffixOperator,
                     Operator = e.Operator,
-                    Expression = e.Expression.Expand(definitions),
+                    Expression = e.Expression.Expand(definitions, referencedExpressions),
                 },
                 BinaryOperatorExpression e => new BinaryOperatorExpression()
                 {
-                    LeftExpression = e.LeftExpression.Expand(definitions),
+                    LeftExpression = e.LeftExpression.Expand(definitions, referencedExpressions),
                     Operator = e.Operator,
-                    RightExpression = e.RightExpression.Expand(definitions),
+                    RightExpression = e.RightExpression.Expand(definitions, referencedExpressions),
                 },
                 TernaryOperatorExpression e => new TernaryOperatorExpression()
                 {
-                    Condition = e.Condition.Expand(definitions),
+                    Condition = e.Condition.Expand(definitions, referencedExpressions),
                     Operator1 = e.Operator1,
-                    TrueExpression = e.TrueExpression.Expand(definitions),
+                    TrueExpression = e.TrueExpression.Expand(definitions, referencedExpressions),
                     Operator2 = e.Operator2,
-                    FalseExpression = e.FalseExpression.Expand(definitions)
+                    FalseExpression = e.FalseExpression.Expand(definitions, referencedExpressions)
                 },
+                UnknownExpression e => Expand(e, definitions, referencedExpressions),
                 _ => throw new NotSupportedException()
             };
+            //Tree branch finished ... remove self
+            referencedExpressions.Remove(expression);
+            return expanded;
         }
-
-        private static IExpression Expand(CallExpression expression, IEnumerable<IMacroDefinition> definitions)
+        private static IExpression Expand(CallExpression expression, IEnumerable<IMacroDefinition> definitions, ISet<IExpression> referencedExpressions)
         {
             var functionDef = definitions.FirstOrDefault(x => x.Name == expression.Value.Value && x.Args?.Length == expression.Arguments.Length && x.Expression != null);
             if (functionDef == null)
                 return new CallExpression()
                 {
-                    Arguments = expression.Arguments.Select(x => x.Expand(definitions)).ToArray(),
+                    Arguments = expression.Arguments.Select(x => x.Expand(definitions, referencedExpressions)).ToArray(),
                     Value = expression.Value
                 };
 
@@ -226,38 +250,79 @@ namespace CMacroParser
                 _definitions = _definitions.Prepend(new VariableDefinition()
                 {
                     Name = arg.name,
-                    Expression = arg.expr.Expand(definitions)
+                    Expression = arg.expr.Expand(definitions, referencedExpressions)
                 });
             }
-            return functionDef.Expression!.Expand(_definitions);
+            return functionDef.Expression!.Expand(_definitions, referencedExpressions);
         }
-        private static IExpression Expand(VariableExpression expression, IEnumerable<IMacroDefinition> definitions)
+        private static IExpression Expand(VariableExpression expression, IEnumerable<IMacroDefinition> definitions, ISet<IExpression> referencedExpressions)
         {
             var def = definitions.FirstOrDefault(x => x.Name == expression.Value.Value && x.Args == null && x.Expression != null);
             if (def == null)
                 return expression;
-            return def.Expression!.Expand(definitions);
+            return def.Expression!.Expand(definitions, referencedExpressions);
+        }
+        private static IExpression Expand(UnknownExpression expression, IEnumerable<IMacroDefinition> definitions, ISet<IExpression> referencedExpressions)
+        {
+            var expandedDefinitions = expression.Expressions
+                .Select(x => x.Expand(definitions, referencedExpressions))
+                .ToArray();
+
+            var unknownExpression = new UnknownExpression()
+            {
+                Expressions = expandedDefinitions
+            };
+
+            var serializedExpression = unknownExpression.Serialize(null);
+
+            return MacroParser.ParseExpression(serializedExpression);
+        }
+
+        private sealed class MacroExpansionGraphNode
+        {
+            public required IExpression Expression { get; init; }
+            public List<MacroExpansionGraphNode> ReferencedExpressions { get; } = new();
+            public bool HasSelfReferencingLoop()
+            {
+                return HasSelfReferencingLoop(this, new());
+                static bool HasSelfReferencingLoop(MacroExpansionGraphNode node, List<IExpression> visited)
+                {
+                    if (visited.Contains(node.Expression))
+                        return true;
+                    visited.Add(node.Expression);
+                    foreach (var item in node.ReferencedExpressions)
+                    {
+                        if (HasSelfReferencingLoop(item, visited))
+                            return true;
+                    }
+                    visited.RemoveAt(visited.Count - 1);
+                    return false;
+                }
+            }
+
         }
         #endregion
 
-        #region IsConst
+        #region IsConstLiteral
         /// <summary>
         /// Check if expression in a compile-time-const
         /// </summary>
-        public static bool IsConst(this IExpression expression, IEnumerable<IMacroDefinition>? definitions = null)
+        public static bool IsConstLiteral(this IExpression expression, IEnumerable<IMacroDefinition>? definitions = null)
         {
             definitions ??= Enumerable.Empty<IMacroDefinition>();
             expression = expression.Expand(definitions);
             return expression switch
             {
-                GroupExpression e => IsConst(e.Expression, definitions),
+                GroupExpression e => IsConstLiteral(e.Expression, definitions),
                 CallExpression e => false,
-                CastExpression e => IsConst(e.Value, definitions),
+                CastExpression e => IsConstLiteral(e.Value, definitions),
                 ConstantExpression e => true,
+                KeywordExpression e => false,
                 VariableExpression e => false,
-                UnaryOperatorExpression e => IsConst(e.Expression, definitions),
-                BinaryOperatorExpression e => IsConst(e.LeftExpression, definitions) && IsConst(e.RightExpression, definitions),
-                TernaryOperatorExpression e => IsConst(e.Condition, definitions) && IsConst(e.TrueExpression, definitions) | IsConst(e.FalseExpression, definitions),
+                UnaryOperatorExpression e => IsConstLiteral(e.Expression, definitions),
+                BinaryOperatorExpression e => IsConstLiteral(e.LeftExpression, definitions) && IsConstLiteral(e.RightExpression, definitions),
+                TernaryOperatorExpression e => IsConstLiteral(e.Condition, definitions) && IsConstLiteral(e.TrueExpression, definitions) && IsConstLiteral(e.FalseExpression, definitions),
+                UnknownExpression e => e.Expressions.All(x => IsConstLiteral(x, definitions)),
                 _ => throw new NotSupportedException()
             };
         }

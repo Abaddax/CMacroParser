@@ -3,6 +3,7 @@
     public interface ISerializerOptions
     {
         string GetLiteralSuffix(LiteralType literalType);
+        string GetKeyword(string keyword);
 
         public static ISerializerOptions Default { get; } = new SerializerOptions()
         {
@@ -29,6 +30,10 @@
                 if (LiteralSuffix?.TryGetValue(literalType, out var value) ?? false)
                     return value;
                 return string.Empty;
+            }
+            public string GetKeyword(string keyword)
+            {
+                return keyword;
             }
         }
     }

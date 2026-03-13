@@ -1,4 +1,4 @@
-﻿using CMacroParser.Contracts;
+using CMacroParser.Contracts;
 
 namespace CMacroParser.Tokenizer
 {
@@ -51,7 +51,7 @@ namespace CMacroParser.Tokenizer
             int pos = 0;
             while (pos < expression.Length)
             {
-                ReadOnlySpan<char> chars = expression[pos..];
+                ReadOnlySpan<char> chars = expression.AsSpan(pos);
                 int skip = 1;
                 if (chars.IsSeperator())
                     chars.SkipSeperator(out skip);
@@ -64,7 +64,9 @@ namespace CMacroParser.Tokenizer
                 else if (chars.IsLiteral())
                     yield return chars.ReadLiteral(out skip);
                 else if (chars.IsComment())
+#pragma warning disable CS0642 // NOOP
                     ;
+#pragma warning restore CS0642
                 else if (chars.IsIdentifier())
                     yield return chars.ReadIdentifier(out skip);
                 else
@@ -81,7 +83,6 @@ namespace CMacroParser.Tokenizer
         {
             if (tokens == null)
                 return string.Empty;
-            bool first = true;
             return string.Join(' ', tokens.Select(t => t.Value));
         }
 

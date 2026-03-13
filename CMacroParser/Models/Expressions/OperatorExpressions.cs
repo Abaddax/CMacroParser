@@ -3,6 +3,9 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
+    /// <remarks>
+    /// i++
+    /// </remarks>
     internal sealed class UnaryOperatorExpression : ExpressionBase
     {
         public required bool IsSuffixOperator { get; init; }
@@ -30,11 +33,14 @@ namespace CMacroParser.Models.Expressions
                 return $"{Expression.Serialize(options)}{Operator.Value}";
         }
     }
+    /// <remarks>
+    /// i * 2
+    /// </remarks>
     internal class BinaryOperatorExpression : ExpressionBase
     {
-        public IExpression LeftExpression { get; init; }
-        public OperatorToken Operator { get; init; }
-        public IExpression RightExpression { get; init; }
+        public required IExpression LeftExpression { get; init; }
+        public required OperatorToken Operator { get; init; }
+        public required IExpression RightExpression { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {
@@ -53,13 +59,16 @@ namespace CMacroParser.Models.Expressions
             return $"({LeftExpression.Serialize(options)} {Operator.Value} {RightExpression.Serialize(options)})";
         }
     }
+    /// <remarks>
+    /// x ? 1 : 0
+    /// </remarks>
     internal class TernaryOperatorExpression : ExpressionBase
     {
-        public IExpression Condition { get; init; }
-        public OperatorToken Operator1 { get; init; }
-        public IExpression TrueExpression { get; init; }
-        public OperatorToken Operator2 { get; init; }
-        public IExpression FalseExpression { get; init; }
+        public required IExpression Condition { get; init; }
+        public required OperatorToken Operator1 { get; init; }
+        public required IExpression TrueExpression { get; init; }
+        public required OperatorToken Operator2 { get; init; }
+        public required IExpression FalseExpression { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {

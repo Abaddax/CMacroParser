@@ -3,6 +3,9 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
+    /// <remarks>
+    /// (int)(PI)
+    /// </remarks>
     internal sealed class CastExpression : ExpressionBase
     {
         public required IExpression Value { get; init; }
@@ -24,7 +27,11 @@ namespace CMacroParser.Models.Expressions
 
         public override string Serialize(ISerializerOptions? options)
         {
-            return $"({this.DeduceType()})({Value.Serialize(options)})";
+            var value = Value.Serialize(options);
+            if (value.StartsWith('(') && value.EndsWith(')'))
+                return $"({this.DeduceLiteralType()}){value}";
+            else
+                return $"({this.DeduceLiteralType()})({value})";
         }
     }
 }

@@ -3,6 +3,9 @@ using CMacroParser.Models.Tokens;
 
 namespace CMacroParser.Models.Expressions
 {
+    /// <remarks>
+    /// 12.34f
+    /// </remarks>
     internal sealed class ConstantExpression : ExpressionBase
     {
         public required LiteralToken Value { get; init; }

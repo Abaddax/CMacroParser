@@ -4,11 +4,11 @@ using CMacroParser.Models.Tokens;
 namespace CMacroParser.Models.Expressions
 {
     /// <remarks>
-    /// PI
+    /// const
     /// </remarks>
-    internal sealed class VariableExpression : ExpressionBase
+    internal sealed class KeywordExpression : ExpressionBase
     {
-        public required IdentifierToken Value { get; init; }
+        public required KeywordToken Value { get; init; }
 
         public override IEnumerable<IToken> Tokens
         {
@@ -20,9 +20,8 @@ namespace CMacroParser.Models.Expressions
 
         public override string Serialize(ISerializerOptions? options)
         {
-            if (Value.IsCall)
-                throw new NotSupportedException();
-            return Value.Value;
+            options ??= ISerializerOptions.Default;
+            return $"{options.GetKeyword(Value.Value)}";
         }
     }
 }

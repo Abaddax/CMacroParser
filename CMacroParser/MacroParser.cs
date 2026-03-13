@@ -1,4 +1,4 @@
-﻿using CMacroParser.Contracts;
+using CMacroParser.Contracts;
 using CMacroParser.Parser;
 
 namespace CMacroParser

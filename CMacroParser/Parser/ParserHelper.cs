@@ -1,4 +1,4 @@
-﻿using CMacroParser.Contracts;
+using CMacroParser.Contracts;
 using CMacroParser.Models.Expressions;
 using CMacroParser.Models.Tokens;
 using static CMacroParser.Parser.Parser;
@@ -45,14 +45,24 @@ namespace CMacroParser.Parser
                 return false;
             return tokens[0].IsLiternal();
         }
+        public static bool IsKeyword(this ReadOnlySpan<IToken> tokens)
+        {
+            if (tokens.Length == 0)
+                return false;
+            return tokens[0].IsKeyword();
+        }
         public static bool IsOperator(this ReadOnlySpan<IToken> tokens)
         {
             if (tokens.Length < 2)
                 return false;
             if (tokens[0].IsOperator())
                 return true;
-            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiternal(), x => x.IsOperator("++") || x.IsOperator("--")))
+            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiternal(),
+                x => x.IsOperator("++") || x.IsOperator("--")))
                 return true;  //a++
+            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsKeyword(),
+                x => x.IsOperator("&") || x.IsOperator("*")))
+                return true; //int&
             return false;
         }
         public static bool IsVariable(this ReadOnlySpan<IToken> tokens)
@@ -121,6 +131,16 @@ namespace CMacroParser.Parser
                 Value = (LiteralToken)tokens[0]
             };
         }
+        public static IExpression ReadKeyword(this ReadOnlySpan<IToken> tokens, out int skip)
+        {
+            if (!tokens.IsKeyword())
+                throw new InvalidOperationException();
+            skip = 1;
+            return new KeywordExpression()
+            {
+                Value = (KeywordToken)tokens[0]
+            };
+        }
         public static IExpression ReadOperator(this ReadOnlySpan<IToken> tokens, out int skip)
         {
             if (!tokens.IsOperator())
@@ -165,6 +185,7 @@ namespace CMacroParser.Parser
             {
                 Value = new IdentifierToken()
                 {
+                    IsCall = false,
                     Value = tokens[0].Value
                 }
             };
@@ -220,6 +241,27 @@ namespace CMacroParser.Parser
                     LeftExpression = last,
                     Operator = appendUnary.Operator,
                     RightExpression = appendUnary.Expression,
+                };
+            }
+            else if (last is UnknownExpression unknown)
+            {
+                return new UnknownExpression()
+                {
+                    Expressions = unknown.Expressions
+                        .Append(append)
+                        .ToArray()
+                };
+            }
+            // throw new Exception($"Unable to concat '{append}' to '{last}'");
+            else
+            {
+                return new UnknownExpression()
+                {
+                    Expressions = new IExpression[]
+                    {
+                        last,
+                        append
+                    }
                 };
             }
             throw new Exception($"Unable to concat '{append}' to '{last}'");

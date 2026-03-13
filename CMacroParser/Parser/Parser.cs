@@ -1,4 +1,4 @@
-﻿using CMacroParser.Contracts;
+using CMacroParser.Contracts;
 using CMacroParser.Models.Definitions;
 using CMacroParser.Models.Expressions;
 using CMacroParser.Tokenizer;
@@ -129,7 +129,7 @@ namespace CMacroParser.Parser
         internal static IExpression ParseExpression(ReadOnlySpan<IToken> expressionTokens)
         {
             int pos = 0;
-            IExpression last = null;
+            IExpression? last = null;
             do
             {
                 var tokens = expressionTokens[pos..];
@@ -163,6 +163,8 @@ namespace CMacroParser.Parser
                 return tokens.ReadCast(out skip);
             else if (tokens.IsConstant())
                 return tokens.ReadConstant(out skip);
+            else if (tokens.IsKeyword())
+                return tokens.ReadKeyword(out skip);
             else if (tokens.IsVariable())
                 return tokens.ReadVariable(out skip);
             else

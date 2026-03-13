@@ -284,7 +284,7 @@ namespace CMacroParser.Tokenizer
         }
 
 
-        private static IToken ParseNumericLiteral(this ReadOnlySpan<char> literal)
+        private static LiteralToken ParseNumericLiteral(this ReadOnlySpan<char> literal)
         {
             if (literal.Length == 0)
                 throw new ArgumentException("Literal is empty", nameof(literal));
@@ -350,9 +350,10 @@ namespace CMacroParser.Tokenizer
                         {
                             value = "0";
                         }
+                        //0L
                         else if (value.Length > 1 && (value[1] == 'u' || value[1] == 'l'))
                         {
-                            value = value;
+                            value = value.ToString();
                         }
                         //Hex
                         else if (value[1] == 'x')
