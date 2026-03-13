@@ -7,7 +7,7 @@ namespace CMacroParser.Parser
 {
     internal static class ParserHelper
     {
-        public static bool IsSequenceOf(this ReadOnlySpan<IToken> tokens, params Func<IToken, bool>[] sequence)
+        public static bool IsSequenceOf(this ReadOnlySpan<IToken> tokens, params ReadOnlySpan<Func<IToken, bool>> sequence)
         {
             if (sequence.Length > tokens.Length)
                 return false;
@@ -29,21 +29,60 @@ namespace CMacroParser.Parser
         {
             if (tokens.Length < 4)
                 return false;
-            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
-                return true; //(float)
-            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
-                return true; //(long double)
-            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
-                return true; //(long long int)
-            if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
-                return true; //(unsigned long long int)
+            //(float)
+            {
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                    return true; //(float)
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("+", "-"), x => IsNumericLiteral(x) || x.IsIdentifier()))
+                    return true; //(float)-1
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("*", "&"), x => x.IsIdentifier()))
+                    return true; //(float)*a
+            }
+            //(long double)
+            {
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                    return true; //(long double)
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("+", "-"), x => IsNumericLiteral(x) || x.IsIdentifier()))
+                    return true; //(long double)-1
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("*", "&"), x => x.IsIdentifier()))
+                    return true; //(long double)*a
+            }
+            //(long long int)
+            {
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                    return true; //(long long int)
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("+", "-"), x => IsNumericLiteral(x) || x.IsIdentifier()))
+                    return true; //(long long int)-1
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("*", "&"), x => x.IsIdentifier()))
+                    return true; //(long long int)*a
+            }
+            //(unsigned long long int)
+            {
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => !x.IsOperator()))
+                    return true; //(unsigned long long int)
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("+", "-"), x => IsNumericLiteral(x) || x.IsIdentifier()))
+                    return true; //(unsigned long long int)-1
+                if (tokens.IsSequenceOf(x => x.IsPunctuator("("), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsKeyword() || x.IsIdentifier(), x => x.IsPunctuator(")"), x => x.IsOperator("*", "&"), x => x.IsIdentifier()))
+                    return true; //(unsigned long long int)*a
+            }
             return false;
+
+            static bool IsNumericLiteral(IToken token)
+            {
+                return token.IsLiteral(
+                    LiteralType.@int, LiteralType.@uint,
+                    LiteralType.@long, LiteralType.@ulong,
+                    LiteralType.@short, LiteralType.@ushort,
+                    LiteralType.@byte,
+                    LiteralType.@double, LiteralType.@float,
+                    LiteralType.@decimal);
+            }
         }
         public static bool IsConstant(this ReadOnlySpan<IToken> tokens)
         {
             if (tokens.Length == 0)
                 return false;
-            return tokens[0].IsLiternal();
+            return tokens[0].IsLiteral();
         }
         public static bool IsKeyword(this ReadOnlySpan<IToken> tokens)
         {
@@ -57,12 +96,15 @@ namespace CMacroParser.Parser
                 return false;
             if (tokens[0].IsOperator())
                 return true;
-            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiternal(),
-                x => x.IsOperator("++") || x.IsOperator("--")))
+            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiteral(),
+                x => x.IsOperator("++", "--")))
                 return true;  //a++
-            if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsKeyword(),
-                x => x.IsOperator("&") || x.IsOperator("*")))
+            if (tokens.Length == 2 &&
+                tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsKeyword(),
+                x => x.IsOperator("&", "*")))
+            {
                 return true; //int&
+            }
             return false;
         }
         public static bool IsVariable(this ReadOnlySpan<IToken> tokens)

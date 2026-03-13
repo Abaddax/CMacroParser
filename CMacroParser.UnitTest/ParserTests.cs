@@ -21,9 +21,9 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, true)", "FUNC(300, true)")]
         [TestCase("-FUNC(3e2, true)", "-FUNC(300, true)")]
         [TestCase("FUNC(FUNC2(A))", "FUNC(FUNC2(A))")]
-        [TestCase("(int)12.3", "(int)12.3")]
+        [TestCase("(int)12.3", "(int)(12.3)")]
         [TestCase("(int)(12.3)", "(int)(12.3)")]
-        [TestCase("(int)FUNC(A, B)", "(int)FUNC(A, B)")]
+        [TestCase("(int)FUNC(A, B)", "(int)(FUNC(A, B))")]
         [TestCase("++a", "++a")]
         [TestCase("a++", "a++")]
         [TestCase("1 + 3.2", "(1 + 3.2)")]
@@ -34,8 +34,8 @@ namespace CMacroParser.UnitTest
         [TestCase("1 * (2 + 3)", "(1 * (2 + 3))")]
         [TestCase("1 + 2 * 3 / 4", "(1 + ((2 * 3) / 4))")]
         [TestCase("1 * 2 + 3 * 4", "((1 * 2) + (3 * 4))")]
-        [TestCase("(int)A + 2 * 3", "((int)A + (2 * 3))")]
-        [TestCase("(int)A * 2 + 3", "(((int)A * 2) + 3)")]
+        [TestCase("(int)A + 2 * 3", "((int)(A) + (2 * 3))")]
+        [TestCase("(int)A * 2 + 3", "(((int)(A) * 2) + 3)")]
         [TestCase("VAL ? 1 : 2", "(VAL ? 1 : 2)")]
         [TestCase("(VAL) ? (1) : (2)", "((VAL) ? (1) : (2))")]
         [TestCase("VAL ? (1 + 2) : (2 + 3)", "(VAL ? (1 + 2) : (2 + 3))")]
@@ -125,6 +125,8 @@ namespace CMacroParser.UnitTest
         [TestCase("(float)123", LiteralType.@float)]
         [TestCase("(float)0", LiteralType.@float)]
         [TestCase("(double)0", LiteralType.@double)]
+        [TestCase("(double)-0", LiteralType.@double)]
+        [TestCase("(double)+0", LiteralType.@double)]
         [TestCase("(long double)0", LiteralType.@decimal)]
         [TestCase("true ? 3 : 2e1", LiteralType.@double)]
         [TestCase("1 > 2", LiteralType.@bool)]
@@ -134,15 +136,16 @@ namespace CMacroParser.UnitTest
         [TestCase("(int)((double)2 + 3)", LiteralType.@int)]
         [TestCase("A + 1", LiteralType.unknown)]
         [TestCase("(HRESULT)0L", LiteralType.custom)]
+        [TestCase("(HRESULT)-0L", LiteralType.custom)]
         #endregion
-        public void ShouldDeduceType(string input, LiteralType type)
+        public void ShouldDeduceLiteralType(string input, LiteralType type)
         {
             var expression = Parser.Parser.ParseExpression(input);
 
             Assert.That(expression, Is.Not.Null);
             Assert.That(expression.Tokens.Any(), Is.True);
 
-            var deducedType = expression.DeduceType();
+            var deducedType = expression.DeduceLiteralType();
 
             Assert.That(deducedType, Is.Not.Null);
             Assert.That(deducedType.Deduced, Is.EqualTo(type));
@@ -157,12 +160,12 @@ namespace CMacroParser.UnitTest
         [TestCase("FUNC(3e2, B)", false, "FUNC(a,b) a+b", "B A")]
         [TestCase("FUNC(3e2, B)", true, "FUNC(a,b) a+b", "B A", "A 2")]
         #endregion
-        public void ShouldCalculateIsConst(string input, bool isConst, params string[] definitions)
+        public void ShouldCalculateIsConstLiteral(string input, bool isConst, params string[] definitions)
         {
             var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).ToArray();
             var expr = Parser.Parser.ParseExpression(input);
 
-            Assert.That(expr.IsConst(defs), Is.EqualTo(isConst));
+            Assert.That(expr.IsConstLiteral(defs), Is.EqualTo(isConst));
         }
 
         [Test]
@@ -201,6 +204,22 @@ namespace CMacroParser.UnitTest
             Assert.That(expanded, Is.Not.Null);
 
             Assert.That(expanded.Serialize(), Is.EqualTo(output));
+        }
+        [Test]
+        [Category("Expansion")]
+        #region [TestCases]
+        [TestCase("T_TYPE TYPE(T_TYPE)", "TYPE(T) T")]
+        [TestCase("A FUNC(A)", "FUNC(X) FUNC(X,2)", "FUNC(X,Y) X+Y")]
+        #endregion
+        public void ShouldDetectSelfReferencingLoop(string input, params string[] definitions)
+        {
+            var expr = Parser.Parser.ParseDefinition(input);
+            var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).Append(expr).ToArray();            
+
+            Assert.Throws<Exception>(() =>
+            {
+                var expanded = expr.Expression!.Expand(defs);
+            }, "Self referencing loop detected!");
         }
     }
 }
