@@ -1,8 +1,8 @@
-using CMacroParser.Contracts;
-using CMacroParser.Models.Tokens;
-using CMacroParser.Tokenizer;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Models.Tokens;
+using Abaddax.CMacroParser.Tokenizer;
 
-namespace CMacroParser.UnitTest
+namespace Abaddax.CMacroParser.Tests
 {
     [TestFixture]
     public class TokenizerTests
@@ -42,7 +42,7 @@ namespace CMacroParser.UnitTest
             for (int i = 0; i < tokens.Length; i++)
             {
                 AssertAreEqual(TokenType.Punctuator, output[i], tokens[i]);
-                var token = AssertTokenType<PunctuatorToken>(tokens[i]);
+                _ = AssertTokenType<PunctuatorToken>(tokens[i]);
             }
         }
 
@@ -92,7 +92,7 @@ namespace CMacroParser.UnitTest
             for (int i = 0; i < tokens.Length; i++)
             {
                 AssertAreEqual(TokenType.Keyword, output[i], tokens[i]);
-                var token = AssertTokenType<KeywordToken>(tokens[i]);
+                _ = AssertTokenType<KeywordToken>(tokens[i]);
             }
         }
 
@@ -146,7 +146,7 @@ namespace CMacroParser.UnitTest
             for (int i = 0; i < tokens.Length; i++)
             {
                 AssertAreEqual(TokenType.Operator, output[i], tokens[i]);
-                var token = AssertTokenType<OperatorToken>(tokens[i]);
+                _ = AssertTokenType<OperatorToken>(tokens[i]);
             }
         }
 
@@ -265,7 +265,7 @@ namespace CMacroParser.UnitTest
             for (int i = 0; i < tokens.Length; i++)
             {
                 AssertAreEqual(TokenType.Identifier, output[i], tokens[i]);
-                var token = AssertTokenType<IdentifierToken>(tokens[i]);
+                _ = AssertTokenType<IdentifierToken>(tokens[i]);
             }
         }
 

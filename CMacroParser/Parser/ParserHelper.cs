@@ -1,9 +1,9 @@
-using CMacroParser.Contracts;
-using CMacroParser.Models.Expressions;
-using CMacroParser.Models.Tokens;
-using static CMacroParser.Parser.Parser;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Models.Expressions;
+using Abaddax.CMacroParser.Models.Tokens;
+using static Abaddax.CMacroParser.Parser.Parser;
 
-namespace CMacroParser.Parser
+namespace Abaddax.CMacroParser.Parser
 {
     internal static class ParserHelper
     {
@@ -98,7 +98,9 @@ namespace CMacroParser.Parser
                 return true;
             if (tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsLiteral(),
                 x => x.IsOperator("++", "--")))
+            {
                 return true;  //a++
+            }
             if (tokens.Length == 2 &&
                 tokens.IsSequenceOf(x => x.IsIdentifier() || x.IsKeyword(),
                 x => x.IsOperator("&", "*")))
@@ -121,8 +123,8 @@ namespace CMacroParser.Parser
                 throw new InvalidOperationException();
             skip = 1;
 
-            var argTokens = tokens[1..].ReadGroup(out var _skip);
-            skip += _skip;
+            var argTokens = tokens[1..].ReadGroup(out var readSkip);
+            skip += readSkip;
             var args = argTokens.ReadArgs();
 
             List<IExpression> argExpressions = new();
@@ -147,12 +149,12 @@ namespace CMacroParser.Parser
             if (!tokens.IsCast())
                 throw new InvalidOperationException();
 
-            var targets = tokens.ReadGroup(out var _skip);
+            var targets = tokens.ReadGroup(out var readSkip);
 
-            skip = _skip;
+            skip = readSkip;
 
-            var valueExpr = Parser.ParseSingleExpression(tokens[skip..], out _skip);
-            skip += _skip;
+            var valueExpr = Parser.ParseSingleExpression(tokens[skip..], out readSkip);
+            skip += readSkip;
 
             return new CastExpression()
             {
@@ -194,8 +196,8 @@ namespace CMacroParser.Parser
                 var @operator = (OperatorToken)tokens[0];
                 skip = 1;
 
-                var expression = Parser.ParseSingleExpression(tokens[1..], out int _skip);
-                skip += _skip;
+                var expression = Parser.ParseSingleExpression(tokens[1..], out int readSkip);
+                skip += readSkip;
                 return new UnaryOperatorExpression()
                 {
                     Operator = @operator,
@@ -237,7 +239,9 @@ namespace CMacroParser.Parser
         public static IExpression Concat(this IExpression last, IExpression append)
         {
             if (last == null)
+            {
                 return append;
+            }
             else if (append is UnaryOperatorExpression appendUnary && !appendUnary.IsSuffixOperator) //last +append
             {
                 //Check operator order 
@@ -256,8 +260,8 @@ namespace CMacroParser.Parser
                         };
                     }
 
-                    OperationPrecedence.TryGetValue(lastBinary.Operator.Value, out var precedence1);
-                    OperationPrecedence.TryGetValue(appendUnary.Operator.Value, out var precedence2);
+                    _ = _OperationPrecedence.TryGetValue(lastBinary.Operator.Value, out var precedence1);
+                    _ = _OperationPrecedence.TryGetValue(appendUnary.Operator.Value, out var precedence2);
 
                     if (precedence1 > precedence2)
                     {
@@ -320,25 +324,17 @@ namespace CMacroParser.Parser
         }
         public static ReadOnlySpan<IToken> ReadGroup(this ReadOnlySpan<IToken> tokens, out int skip)
         {
-            HashSet<char> openSeperator = new HashSet<char>("([{");
-            HashSet<char> closeSeperator = new HashSet<char>(")]}");
-
-            if (!tokens[0].IsPunctuator("(") &&
-                !tokens[0].IsPunctuator("[") &&
-                !tokens[0].IsPunctuator("{"))
+            if (!tokens[0].IsPunctuator("(", "[", "{"))
                 throw new InvalidOperationException("Tokens must start with '(', '{' or '['");
             int nesting = 1;
             skip = 1;
             while (nesting > 0)
             {
-                if (tokens[skip].IsPunctuator(")") ||
-                    tokens[skip].IsPunctuator("]") ||
-                    tokens[skip].IsPunctuator("}"))
+                if (tokens[skip].IsPunctuator(")", "]", "}"))
                     nesting--;
-                else if (tokens[skip].IsPunctuator("(") ||
-                    tokens[skip].IsPunctuator("[") ||
-                    tokens[skip].IsPunctuator("{"))
+                else if (tokens[skip].IsPunctuator("(", "[", "{"))
                     nesting++;
+
                 skip++;
             }
             return tokens[1..(skip - 1)];

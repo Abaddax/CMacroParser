@@ -1,9 +1,9 @@
-using CMacroParser.Contracts;
-using CMacroParser.Models.Definitions;
-using CMacroParser.Models.Expressions;
-using static CMacroParser.Parser.Parser;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Models.Definitions;
+using Abaddax.CMacroParser.Models.Expressions;
+using static Abaddax.CMacroParser.Parser.Parser;
 
-namespace CMacroParser
+namespace Abaddax.CMacroParser
 {
     public static class ExpressionExtensions
     {
@@ -16,15 +16,15 @@ namespace CMacroParser
             return expression switch
             {
                 GroupExpression e => DeduceLiteralType(e.Expression),
-                CallExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
+                CallExpression => IDeducedType.Create(string.Empty, LiteralType.unknown),
                 CastExpression e => DeduceLiteralType(e),
                 ConstantExpression e => IDeducedType.Create(e.Value.LiteralType.ToString(), e.Value.LiteralType),
                 KeywordExpression e => DeduceLiteralType(e),
-                VariableExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
+                VariableExpression => IDeducedType.Create(string.Empty, LiteralType.unknown),
                 UnaryOperatorExpression e => DeduceLiteralType(e.Expression),
                 BinaryOperatorExpression e => DeduceLiteralType(e),
                 TernaryOperatorExpression e => DeduceLiteralType(e),
-                UnknownExpression e => IDeducedType.Create(string.Empty, LiteralType.unknown),
+                UnknownExpression => IDeducedType.Create(string.Empty, LiteralType.unknown),
                 _ => throw new NotSupportedException()
             };
         }
@@ -101,14 +101,14 @@ namespace CMacroParser
         }
         private static IDeducedType DeduceLiteralType(BinaryOperatorExpression expression)
         {
-            OperationPrecedence.TryGetValue(expression.Operator.Value, out var precedence);
+            _ = _OperationPrecedence.TryGetValue(expression.Operator.Value, out var precedence);
             if (precedence == 9 || precedence == 10) //Binary operators
                 return IDeducedType.Create("bool", LiteralType.@bool);
 
             var leftType = DeduceLiteralType(expression.LeftExpression);
             var rightType = DeduceLiteralType(expression.RightExpression);
-            TypePrecedence.TryGetValue(leftType.Deduced, out var leftPrecedence);
-            TypePrecedence.TryGetValue(rightType.Deduced, out var rightPrecedence);
+            _ = _TypePrecedence.TryGetValue(leftType.Deduced, out var leftPrecedence);
+            _ = _TypePrecedence.TryGetValue(rightType.Deduced, out var rightPrecedence);
 
             if (leftPrecedence < rightPrecedence)
                 return leftType;
@@ -121,8 +121,8 @@ namespace CMacroParser
         {
             var trueType = DeduceLiteralType(expression.TrueExpression);
             var falseType = DeduceLiteralType(expression.FalseExpression);
-            TypePrecedence.TryGetValue(trueType.Deduced, out var truePrecedence);
-            TypePrecedence.TryGetValue(falseType.Deduced, out var falsePrecedence);
+            _ = _TypePrecedence.TryGetValue(trueType.Deduced, out var truePrecedence);
+            _ = _TypePrecedence.TryGetValue(falseType.Deduced, out var falsePrecedence);
 
             if (falsePrecedence < truePrecedence)
                 return falseType;
@@ -143,13 +143,13 @@ namespace CMacroParser
                 GroupExpression e => ContainsUnknown(e.Expression, definitions),
                 CallExpression e => ContainsUnknown(e, definitions),
                 CastExpression e => ContainsUnknown(e.Value, definitions),
-                ConstantExpression e => false,
-                KeywordExpression e => false,
+                ConstantExpression => false,
+                KeywordExpression => false,
                 VariableExpression e => ContainsUnknown(e, definitions),
                 UnaryOperatorExpression e => ContainsUnknown(e.Expression, definitions),
                 BinaryOperatorExpression e => ContainsUnknown(e.LeftExpression, definitions) || ContainsUnknown(e.RightExpression, definitions),
                 TernaryOperatorExpression e => ContainsUnknown(e.Condition, definitions) || ContainsUnknown(e.TrueExpression, definitions) || ContainsUnknown(e.FalseExpression, definitions),
-                UnknownExpression e => true,
+                UnknownExpression => true,
                 _ => throw new NotSupportedException()
             };
         }
@@ -237,23 +237,25 @@ namespace CMacroParser
         {
             var functionDef = definitions.FirstOrDefault(x => x.Name == expression.Value.Value && x.Args?.Length == expression.Arguments.Length && x.Expression != null);
             if (functionDef == null)
+            {
                 return new CallExpression()
                 {
                     Arguments = expression.Arguments.Select(x => x.Expand(definitions, referencedExpressions)).ToArray(),
                     Value = expression.Value
                 };
+            }
 
             //Prepend arguments
-            IEnumerable<IMacroDefinition> _definitions = definitions;
+            IEnumerable<IMacroDefinition> currentDefinitions = definitions;
             foreach (var arg in expression.Arguments.Select((arg, i) => (name: functionDef.Args![i], expr: arg)))
             {
-                _definitions = _definitions.Prepend(new VariableDefinition()
+                currentDefinitions = currentDefinitions.Prepend(new VariableDefinition()
                 {
                     Name = arg.name,
                     Expression = arg.expr.Expand(definitions, referencedExpressions)
                 });
             }
-            return functionDef.Expression!.Expand(_definitions, referencedExpressions);
+            return functionDef.Expression!.Expand(currentDefinitions, referencedExpressions);
         }
         private static IExpression Expand(VariableExpression expression, IEnumerable<IMacroDefinition> definitions, ISet<IExpression> referencedExpressions)
         {

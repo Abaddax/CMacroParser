@@ -1,16 +1,16 @@
-using CMacroParser.Contracts;
+using Abaddax.CMacroParser.Contracts;
 
-namespace CMacroParser.Tokenizer
+namespace Abaddax.CMacroParser.Tokenizer
 {
     public static class Tokenizer
     {
-        internal static readonly IReadOnlySet<char> Digits = new HashSet<char>("0123456789");
-        internal static readonly IReadOnlySet<char> HexDigits = new HashSet<char>("abcdef");
-        internal static readonly IReadOnlySet<char> Separators = new HashSet<char>(" \\\r\n\t");
-        internal static readonly IReadOnlySet<char> NumberEnd = new HashSet<char>("ulfd");
-        internal static readonly IReadOnlySet<char> Operators = new HashSet<char>("+-*/%<>=~!^|&?:");
-        internal static readonly IReadOnlySet<char> Punctuators = new HashSet<char>(",;()[]{}");
-        internal static readonly IReadOnlySet<string> Keywords = new HashSet<string>
+        internal static readonly IReadOnlySet<char> _Digits = new HashSet<char>("0123456789");
+        internal static readonly IReadOnlySet<char> _HexDigits = new HashSet<char>("abcdef");
+        internal static readonly IReadOnlySet<char> _Separators = new HashSet<char>(" \\\r\n\t");
+        internal static readonly IReadOnlySet<char> _NumberEnd = new HashSet<char>("ulfd");
+        internal static readonly IReadOnlySet<char> _Operators = new HashSet<char>("+-*/%<>=~!^|&?:");
+        internal static readonly IReadOnlySet<char> _Punctuators = new HashSet<char>(",;()[]{}");
+        internal static readonly IReadOnlySet<string> _Keywords = new HashSet<string>
         {
             "auto",
             "break",

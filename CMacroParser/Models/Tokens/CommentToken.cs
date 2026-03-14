@@ -1,6 +1,6 @@
-﻿using CMacroParser.Contracts;
+using Abaddax.CMacroParser.Contracts;
 
-namespace CMacroParser.Models.Tokens
+namespace Abaddax.CMacroParser.Models.Tokens
 {
     internal sealed class CommentToken : TokenBase
     {

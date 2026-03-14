@@ -1,6 +1,6 @@
-﻿using CMacroParser.Contracts;
+using Abaddax.CMacroParser.Contracts;
 
-namespace CMacroParser.Models.Expressions
+namespace Abaddax.CMacroParser.Models.Expressions
 {
     internal abstract class ExpressionBase : IExpression
     {

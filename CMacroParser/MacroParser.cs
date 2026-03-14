@@ -1,7 +1,7 @@
-using CMacroParser.Contracts;
-using CMacroParser.Parser;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Parser;
 
-namespace CMacroParser
+namespace Abaddax.CMacroParser
 {
     public static class MacroParser
     {

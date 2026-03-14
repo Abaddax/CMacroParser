@@ -1,6 +1,6 @@
-﻿using CMacroParser.Contracts;
+using Abaddax.CMacroParser.Contracts;
 
-namespace CMacroParser.Models.Definitions
+namespace Abaddax.CMacroParser.Models.Definitions
 {
     internal sealed class FunctionDefinition : IMacroDefinition
     {

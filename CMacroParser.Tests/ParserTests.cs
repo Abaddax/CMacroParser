@@ -1,6 +1,6 @@
-﻿using CMacroParser.Contracts;
+﻿using Abaddax.CMacroParser.Contracts;
 
-namespace CMacroParser.UnitTest
+namespace Abaddax.CMacroParser.Tests
 {
     [TestFixture]
     public class ParserTests
@@ -214,7 +214,7 @@ namespace CMacroParser.UnitTest
         public void ShouldDetectSelfReferencingLoop(string input, params string[] definitions)
         {
             var expr = Parser.Parser.ParseDefinition(input);
-            var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).Append(expr).ToArray();            
+            var defs = definitions.Select(x => Parser.Parser.ParseDefinition(x)).Append(expr).ToArray();
 
             Assert.Throws<Exception>(() =>
             {

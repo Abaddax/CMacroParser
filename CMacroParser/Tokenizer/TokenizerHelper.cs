@@ -1,11 +1,11 @@
-﻿using CMacroParser.Contracts;
-using CMacroParser.Models.Tokens;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Models.Tokens;
 using System.Buffers.Binary;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using static CMacroParser.Tokenizer.Tokenizer;
+using static Abaddax.CMacroParser.Tokenizer.Tokenizer;
 
-namespace CMacroParser.Tokenizer
+namespace Abaddax.CMacroParser.Tokenizer
 {
     internal static class TokenizerHelper
     {
@@ -13,28 +13,30 @@ namespace CMacroParser.Tokenizer
         {
             if (chars.Length == 0)
                 return false;
-            return Separators.Contains(chars[0]);
+            return _Separators.Contains(chars[0]);
         }
         public static bool IsPunctuator(this ReadOnlySpan<char> chars)
         {
             if (chars.Length == 0)
                 return false;
-            return Punctuators.Contains(chars[0]);
+            return _Punctuators.Contains(chars[0]);
         }
         public static bool IsKeyword(this ReadOnlySpan<char> chars)
         {
             if (chars.Length == 0)
                 return false;
-            foreach (var keyword in Keywords)
+            foreach (var keyword in _Keywords)
             {
                 if (!chars.StartsWith(keyword))
                     continue;
                 if (chars.Length == keyword.Length)
                     return true;
                 //Check if not concatinated with something else e.g. int_max
-                if (Separators.Contains(chars[keyword.Length]) ||
-                    Punctuators.Contains(chars[keyword.Length]))
+                if (_Separators.Contains(chars[keyword.Length]) ||
+                    _Punctuators.Contains(chars[keyword.Length]))
+                {
                     return true;
+                }
             }
             return false;
         }
@@ -42,7 +44,7 @@ namespace CMacroParser.Tokenizer
         {
             if (chars.Length == 0)
                 return false;
-            return Operators.Contains(chars[0]);
+            return _Operators.Contains(chars[0]);
         }
         public static bool IsLiteral(this ReadOnlySpan<char> chars)
         {
@@ -50,8 +52,10 @@ namespace CMacroParser.Tokenizer
                 return false;
             if (chars.StartsWith("true") ||
                 chars.StartsWith("false")) //Technically an identifier but this is easier
+            {
                 return true;
-            return Digits.Contains(chars[0]) ||
+            }
+            return _Digits.Contains(chars[0]) ||
                 char.ToLowerInvariant(chars[0]) == '\'' ||
                 char.ToLowerInvariant(chars[0]) == '\"' ||
                 char.ToLowerInvariant(chars[0]) == '.';
@@ -97,7 +101,7 @@ namespace CMacroParser.Tokenizer
             if (!IsKeyword(chars))
                 throw new InvalidOperationException();
             List<string> keywords = new List<string>();
-            foreach (var keyword in Keywords)
+            foreach (var keyword in _Keywords)
             {
                 if (chars.StartsWith(keyword))
                     keywords.Add(keyword); //Multiple possible e.g. do and double
@@ -200,7 +204,7 @@ namespace CMacroParser.Tokenizer
                 };
             }
             //number
-            else if (chars[0] == '.' || Digits.Contains(chars[0]))
+            else if (chars[0] == '.' || _Digits.Contains(chars[0]))
             {
                 skip = 0;
 
@@ -235,10 +239,14 @@ namespace CMacroParser.Tokenizer
 
                 while (skip < chars.Length)
                 {
-                    if (numBase <= 10 && Digits.Contains(chars[skip]))
+                    if (numBase <= 10 && _Digits.Contains(chars[skip]))
+                    {
                         skip++;
-                    else if (numBase == 16 && (Digits.Contains(chars[skip]) || HexDigits.Contains(char.ToLowerInvariant(chars[skip]))))
+                    }
+                    else if (numBase == 16 && (_Digits.Contains(chars[skip]) || _HexDigits.Contains(char.ToLowerInvariant(chars[skip]))))
+                    {
                         skip++;
+                    }
                     else if (chars[skip] == '.')
                     {
                         numBase = 10;
@@ -252,10 +260,14 @@ namespace CMacroParser.Tokenizer
                         if (chars[skip] == '-')
                             skip++;
                     }
-                    else if (NumberEnd.Contains(char.ToLowerInvariant(chars[skip])))
+                    else if (_NumberEnd.Contains(char.ToLowerInvariant(chars[skip])))
+                    {
                         skip++;
+                    }
                     else
+                    {
                         break;
+                    }
                 }
 
                 return ParseNumericLiteral(chars[0..skip]);
@@ -310,7 +322,7 @@ namespace CMacroParser.Tokenizer
                 while (characters.Count < 4)
                     characters.Insert(0, '\0');
                 int value = BinaryPrimitives.ReadInt32BigEndian(characters.Select(x => (byte)x).ToArray());
-                return new LiteralToken() { Value = value.ToString(), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() };
+                return new LiteralToken() { Value = value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() };
             }
             else
             {
@@ -331,12 +343,12 @@ namespace CMacroParser.Tokenizer
 
                     return (type, value) switch
                     {
-                        var (t, v) when t == LiteralType.@float && TryParse(() => float.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@float, OriginalContent = literal.ToString() },
-                        var (t, v) when t == LiteralType.@double && TryParse(() => double.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@double, OriginalContent = literal.ToString() },
-                        var (t, v) when t == LiteralType.@decimal && TryParse(() => decimal.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@decimal, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@float && TryParse(() => float.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@float, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@double && TryParse(() => double.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@double, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@decimal && TryParse(() => decimal.Parse(v, NumberStyles.Float, CultureInfo.InvariantCulture), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@decimal, OriginalContent = literal.ToString() },
                         _ => throw new Exception($"Unable to parse floating-point-literal. ({literal})")
                     };
                 }
@@ -386,14 +398,14 @@ namespace CMacroParser.Tokenizer
 
                     return (type, value) switch
                     {
-                        var (t, v) when t == LiteralType.@int && TryParse(() => Convert.ToInt32(v, numBase), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() },
-                        var (t, v) when t == LiteralType.@uint && TryParse(() => Convert.ToUInt32(v, numBase), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@uint, OriginalContent = literal.ToString() },
-                        var (t, v) when t == LiteralType.@long && TryParse(() => Convert.ToInt64(v, numBase), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@long, OriginalContent = literal.ToString() },
-                        var (t, v) when t == LiteralType.@ulong && TryParse(() => Convert.ToUInt64(v, numBase), out var _value) =>
-                            new LiteralToken() { Value = _value.ToString(), LiteralType = LiteralType.@ulong, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@int && TryParse(() => Convert.ToInt32(v, numBase), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@int, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@uint && TryParse(() => Convert.ToUInt32(v, numBase), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@uint, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@long && TryParse(() => Convert.ToInt64(v, numBase), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@long, OriginalContent = literal.ToString() },
+                        var (t, v) when t == LiteralType.@ulong && TryParse(() => Convert.ToUInt64(v, numBase), out var parsedValue) =>
+                            new LiteralToken() { Value = parsedValue.ToString(CultureInfo.InvariantCulture), LiteralType = LiteralType.@ulong, OriginalContent = literal.ToString() },
                         _ => throw new Exception($"Unable to parse integer-literal. ({literal})")
                     };
                 }

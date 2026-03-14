@@ -13,16 +13,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-		<_Parameter1>CMacroParser.UnitTest</_Parameter1>
-	</AssemblyAttribute>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Abaddax.Build.Common" Version="0.0.1-preview6">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Abaddax.CMacroParser.Tests"/>
   </ItemGroup>
 
 </Project>

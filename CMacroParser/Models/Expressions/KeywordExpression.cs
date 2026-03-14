@@ -1,7 +1,7 @@
-﻿using CMacroParser.Contracts;
-using CMacroParser.Models.Tokens;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Models.Tokens;
 
-namespace CMacroParser.Models.Expressions
+namespace Abaddax.CMacroParser.Models.Expressions
 {
     /// <remarks>
     /// const

@@ -1,11 +1,11 @@
-﻿namespace CMacroParser.Contracts
+namespace Abaddax.CMacroParser.Contracts
 {
     public interface ISerializerOptions
     {
         string GetLiteralSuffix(LiteralType literalType);
         string GetKeyword(string keyword);
 
-        public static ISerializerOptions Default { get; } = new SerializerOptions()
+        static ISerializerOptions Default { get; } = new DefaultSerializerOptions()
         {
             LiteralSuffix = new Dictionary<LiteralType, string>()
             {
@@ -21,7 +21,7 @@
             }
         };
 
-        protected class SerializerOptions : ISerializerOptions
+        private sealed class DefaultSerializerOptions : ISerializerOptions
         {
             public Dictionary<LiteralType, string> LiteralSuffix { get; init; } = new();
 

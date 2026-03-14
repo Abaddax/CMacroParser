@@ -1,14 +1,14 @@
-using CMacroParser.Contracts;
-using CMacroParser.Models.Definitions;
-using CMacroParser.Models.Expressions;
-using CMacroParser.Tokenizer;
+using Abaddax.CMacroParser.Contracts;
+using Abaddax.CMacroParser.Models.Definitions;
+using Abaddax.CMacroParser.Models.Expressions;
+using Abaddax.CMacroParser.Tokenizer;
 
-namespace CMacroParser.Parser
+namespace Abaddax.CMacroParser.Parser
 {
     internal static class Parser
     {
         //https://en.cppreference.com/w/cpp/language/operator_precedence
-        internal static readonly IReadOnlyDictionary<string, int> OperationPrecedence = new Dictionary<string, int>
+        internal static readonly IReadOnlyDictionary<string, int> _OperationPrecedence = new Dictionary<string, int>
         {
             { "*", 5 },
             { "/", 5 },
@@ -43,7 +43,7 @@ namespace CMacroParser.Parser
             { ",", 17 },
         };
         //https://stackoverflow.com/questions/5563000/implicit-type-conversion-rules-in-c-operators
-        internal static readonly IReadOnlyDictionary<LiteralType, int> TypePrecedence = new Dictionary<LiteralType, int>
+        internal static readonly IReadOnlyDictionary<LiteralType, int> _TypePrecedence = new Dictionary<LiteralType, int>
         {
             { LiteralType.@string, 1 },
             { LiteralType.@char, 2 },
@@ -156,19 +156,33 @@ namespace CMacroParser.Parser
                 };
             }
             else if (tokens.IsCall())
+            {
                 return tokens.ReadCall(out skip);
+            }
             else if (tokens.IsOperator())
+            {
                 return tokens.ReadOperator(out skip);
+            }
             else if (tokens.IsCast())
+            {
                 return tokens.ReadCast(out skip);
+            }
             else if (tokens.IsConstant())
+            {
                 return tokens.ReadConstant(out skip);
+            }
             else if (tokens.IsKeyword())
+            {
                 return tokens.ReadKeyword(out skip);
+            }
             else if (tokens.IsVariable())
+            {
                 return tokens.ReadVariable(out skip);
+            }
             else
+            {
                 throw new NotSupportedException();
+            }
         }
     }
 }

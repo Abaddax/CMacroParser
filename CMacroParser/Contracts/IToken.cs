@@ -1,4 +1,4 @@
-﻿namespace CMacroParser.Contracts
+namespace Abaddax.CMacroParser.Contracts
 {
     public interface IToken
     {
