@@ -1,3 +1,5 @@
+[![CI](https://github.com/Abaddax/CMacroParser/actions/workflows/ci.yml/badge.svg)](https://github.com/Abaddax/CMacroParser/actions/workflows/ci.yml)
+
 # C Macro Parser
 A basic C-Macro parser written in C#.
 
